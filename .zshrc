@@ -5,8 +5,9 @@
 # Many systems put important config in .bashrc (module loads, SLURM paths,
 # conda init, etc.). Source it in emulate-sh mode so bash-only builtins
 # (shopt, bind, etc.) are silently ignored instead of erroring.
+# Set ZSH_SOURCING_BASHRC so .bashrc can skip shell-switching lines.
 if [[ -f "$HOME/.bashrc" ]]; then
-    emulate sh -c 'source "$HOME/.bashrc"' 2>/dev/null
+    ZSH_SOURCING_BASHRC=1 emulate sh -c 'source "$HOME/.bashrc"' 2>/dev/null
 fi
 
 # ── Zinit plugin manager ──────────────────────────────────────────────────────
@@ -76,6 +77,12 @@ bindkey '^[[3~' delete-char
 autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' menu select
+
+# ── zoxide (overrides bash init from .bashrc) ─────────────────────────────────
+
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init zsh)"
+fi
 
 # ── fzf integration ───────────────────────────────────────────────────────────
 
