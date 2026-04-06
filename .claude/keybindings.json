@@ -2,13 +2,7 @@
   "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
   "$docs": "https://code.claude.com/docs/en/keybindings",
   "bindings": [
-    {
-      "context": "Global",
-      "bindings": {
-        "ctrl+shift+o": "app:toggleTeammatePreview"
-      }
-    },
-    {
+{
       "context": "Chat",
       "bindings": {
         "escape": null,
