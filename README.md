@@ -19,6 +19,20 @@ cd ~/dotfiles
 git submodule update --remote nvim/.config/nvim
 ```
 
+### `claude`
+
+Claude Code global configuration — instructions, permissions, keybindings, statusline.
+
+```bash
+stow claude    # symlinks ~/.claude/{CLAUDE.md,settings.json,keybindings.json,statusline-command.sh}
+```
+
+Files:
+- `CLAUDE.md` — personal instructions (jj preference, Python style, GitLab workflow)
+- `settings.json` — permissions (allow/deny/ask), plugins, MCP servers
+- `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
+- `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
+
 ### `claude-sandbox`
 
 Bubblewrap-based sandbox for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Confines the AI agent to a minimal filesystem view using Linux user namespaces — no root required.
@@ -41,6 +55,7 @@ cd ~/dotfiles
 
 # Symlink packages into home directory
 stow nvim              # ~/.config/nvim -> frozen.nvim
+stow claude            # ~/.claude/{CLAUDE.md,settings.json,...}
 stow claude-sandbox    # ~/.local/bin/claude-sandbox, ~/.config/proxy-creds/
 
 # Install claude-sandbox dependencies (bwrap, mitmproxy, CA certs)
