@@ -34,8 +34,11 @@ alias ro='rg -uu --vimgrep'
 # SSH tunnel helpers
 # frp PORT — kill all SSH tunnels forwarding a given port
 frp() {
-    if lsof -i :"$1" | grep "$USER"; then
-        kill -9 $(lsof -i :"$1" | grep "$USER" | awk '{print $2}')
+    local pids
+    pids=$(lsof -ti :"$1" -u "$USER" 2>/dev/null)
+    if [[ -n "$pids" ]]; then
+        echo "$pids" | xargs kill 2>/dev/null
+        echo "Killed PIDs: $pids"
     fi
 }
 # fp PORT HOST — create SSH port forward
