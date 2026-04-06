@@ -103,6 +103,10 @@ path=(
 
 # ── Aliases ───────────────────────────────────────────────────────────────────
 
+# Claude: sandboxed by default, explicit opt-out
+alias claude='claude-sandbox'
+alias claude-unsafe='command claude'
+
 alias v='nvim'
 alias ll='ls -lah --color=auto'
 alias la='ls -A --color=auto'
