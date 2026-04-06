@@ -90,6 +90,73 @@ else
     echo "[ok] vifm installed: $(vifm --version 2>&1 | head -1)"
 fi
 
+# 8. Install zinit plugin manager for zsh
+ZINIT_HOME="${HOME}/.local/share/zinit/zinit.git"
+if [[ -d "$ZINIT_HOME" ]]; then
+    echo "[ok] zinit already installed"
+else
+    echo "[..] Installing zinit..."
+    mkdir -p "$(dirname "$ZINIT_HOME")"
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+    echo "[ok] zinit installed"
+fi
+
+# 9. Install fzf (no sudo required)
+if command -v fzf &>/dev/null; then
+    echo "[ok] fzf already installed: $(fzf --version 2>&1 | head -1)"
+else
+    echo "[..] Installing fzf..."
+    TMPDIR="$(mktemp -d)"
+    ARCH="$(uname -m)"
+    case "$ARCH" in
+        x86_64)  FZF_ARCH="amd64" ;;
+        aarch64) FZF_ARCH="arm64" ;;
+        *)       FZF_ARCH="$ARCH" ;;
+    esac
+    OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    FZF_VERSION="$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d 'v')"
+    (
+        cd "$TMPDIR"
+        wget -q "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-${OS}_${FZF_ARCH}.tar.gz" \
+            -O fzf.tar.gz
+        tar xzf fzf.tar.gz
+        cp fzf "$HOME/.local/bin/fzf"
+        chmod +x "$HOME/.local/bin/fzf"
+    )
+    rm -rf "$TMPDIR"
+    echo "[ok] fzf installed: $(fzf --version 2>&1 | head -1)"
+fi
+
+# 10. Set zsh as default shell
+ZSH_PATH="$(command -v zsh 2>/dev/null)"
+if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
+    if chsh -s "$ZSH_PATH" 2>/dev/null; then
+        echo "[ok] Default shell set to $ZSH_PATH"
+    else
+        # chsh may need sudo or may not be available
+        # Fallback: set via ~/.bashrc exec hack if bash is current shell
+        if [[ "$SHELL" == *"bash"* ]]; then
+            EXEC_LINE="[[ -x $ZSH_PATH ]] && exec $ZSH_PATH -l"
+            if ! grep -qF "$EXEC_LINE" "$HOME/.bashrc" 2>/dev/null; then
+                echo "" >> "$HOME/.bashrc"
+                echo "# Auto-switch to zsh (no sudo for chsh)" >> "$HOME/.bashrc"
+                echo "$EXEC_LINE" >> "$HOME/.bashrc"
+                echo "[ok] Added zsh exec to ~/.bashrc (chsh unavailable without sudo)"
+            else
+                echo "[ok] ~/.bashrc already execs zsh"
+            fi
+        else
+            echo "[warn] Could not set default shell. Run: chsh -s $ZSH_PATH"
+        fi
+    fi
+else
+    if [[ -n "$ZSH_PATH" ]]; then
+        echo "[ok] Default shell is already zsh"
+    else
+        echo "[warn] zsh not found. Install it first (apt install zsh / brew install zsh)"
+    fi
+fi
+
 echo ""
 echo "=== Done ==="
 echo ""
@@ -98,5 +165,7 @@ echo "  claude-sandbox ~/myproject              # basic sandbox"
 echo "  claude-sandbox --proxy ~/myproject       # with credential injection"
 echo "  claude-sandbox --shell ~/myproject       # debug with bash"
 echo "  vifm                                     # file manager"
+echo "  zsh                                      # start zsh (plugins install on first launch)"
 echo ""
 echo "Edit ~/.config/proxy-creds/credentials.json to add your API tokens for --proxy mode."
+echo "Run 'p10k configure' to set up your prompt style."

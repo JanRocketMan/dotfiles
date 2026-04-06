@@ -28,6 +28,17 @@ bash install.sh
 - `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
 - `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
 
+### `.zshrc` / `.zshenv` — Zsh
+
+Fish-like zsh setup with zinit plugin manager:
+- **Powerlevel10k** — fast prompt with git status, shortened paths
+- **zsh-autosuggestions** — inline grey suggestions from history (accept with →)
+- **zsh-history-substring-search** — type partial command, press ↑/↓ to match
+- **zsh-syntax-highlighting** — command coloring like fish
+- **fzf** integration for fuzzy history search (Ctrl+R)
+
+First launch installs plugins automatically. Run `p10k configure` to set up prompt style.
+
 ### `.config/nvim/` — Neovim
 
 [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) config (git submodule). Uses lazy.nvim — plugins install automatically on first launch.
