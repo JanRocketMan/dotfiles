@@ -4,6 +4,21 @@ Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 ## Packages
 
+### `nvim`
+
+Neovim configuration via [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) (git submodule). Uses lazy.nvim for plugin management.
+
+```bash
+stow nvim                    # symlinks ~/.config/nvim
+nvim                         # first launch installs plugins automatically
+```
+
+Update to latest config:
+```bash
+cd ~/dotfiles
+git submodule update --remote nvim/.config/nvim
+```
+
 ### `claude-sandbox`
 
 Bubblewrap-based sandbox for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Confines the AI agent to a minimal filesystem view using Linux user namespaces — no root required.
@@ -20,14 +35,15 @@ Bubblewrap-based sandbox for [Claude Code](https://docs.anthropic.com/en/docs/cl
 ## Setup
 
 ```bash
-# Clone
-git clone git@github.com:JanRocketMan/dotfiles.git ~/dotfiles
+# Clone (--recurse-submodules pulls frozen.nvim)
+git clone --recurse-submodules git@github.com:JanRocketMan/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-# Symlink into home directory
-stow claude-sandbox
+# Symlink packages into home directory
+stow nvim              # ~/.config/nvim -> frozen.nvim
+stow claude-sandbox    # ~/.local/bin/claude-sandbox, ~/.config/proxy-creds/
 
-# Install dependencies (bwrap, mitmproxy, CA certs, known_hosts)
+# Install claude-sandbox dependencies (bwrap, mitmproxy, CA certs)
 bash claude-sandbox/install.sh
 ```
 

@@ -1,0 +1,102 @@
+" #~/.config/vifm/colors/codeyellow.vifm
+" You can edit this file by hand.
+" The " character at the beginning of a line comments out the line.
+" Blank lines are ignored.
+
+" The Default color scheme is used for any directory that does not have
+" a specified scheme and for parts of user interface like menus. A
+" color scheme set for a base directory will also
+" be used for the sub directories.
+
+" The standard ncurses colors are:
+" Default = -1 = None, can be used for transparency or default color
+" Black = 0
+" Red = 1
+" Green = 2
+" Yellow = 3
+" Blue = 4
+" Magenta = 5
+" Cyan = 6
+" White = 7
+
+" Light versions of colors are also available (they set bold
+" attribute in terminals with less than 16 colors):
+" LightBlack
+" LightRed
+" LightGreen
+" LightYellow
+" LightBlue
+" LightMagenta
+" LightCyan
+" LightWhite
+
+" Available attributes (some of them can be combined):
+" bold
+" underline
+" reverse or inverse
+" standout
+" italic (on unsupported systems becomes reverse)
+" combine
+" none
+
+" Vifm supports 256 colors you can use color numbers 0-255
+" (requires properly set up terminal: set your TERM environment variable
+" (directly or using resources) to some color terminal name (e.g.
+" xterm-256color) from /usr/lib/terminfo/; you can check current number
+" of colors in your terminal with tput colors command)
+
+" highlight group cterm=attrs ctermfg=foreground_color ctermbg=background_color
+
+highlight clear
+
+highlight Win cterm=none ctermfg=144 ctermbg=234
+highlight Directory cterm=none ctermfg=137 ctermbg=234
+highlight Link cterm=bold ctermfg=144 ctermbg=234
+highlight BrokenLink cterm=bold ctermfg=52 ctermbg=234
+highlight HardLink cterm=none ctermfg=144 ctermbg=234
+highlight Socket cterm=bold ctermfg=23 ctermbg=234
+highlight Device cterm=bold ctermfg=187 ctermbg=234
+highlight Fifo cterm=bold ctermfg=145 ctermbg=234
+highlight Executable cterm=bold ctermfg=137 ctermbg=234
+highlight Selected cterm=none ctermfg=144 ctermbg=24
+highlight CurrLine cterm=none ctermfg=144 ctermbg=235
+highlight TopLine cterm=none ctermfg=144 ctermbg=234
+highlight TopLineSel cterm=bold ctermfg=144 ctermbg=234
+highlight StatusLine cterm=none ctermfg=144 ctermbg=234
+highlight WildBox ctermfg=250 ctermbg=234
+highlight WildMenu cterm=none ctermfg=250 ctermbg=23
+highlight CmdLine cterm=none ctermfg=144 ctermbg=234
+highlight ErrorMsg cterm=bold ctermfg=52 ctermbg=234
+highlight Border cterm=none ctermfg=238 ctermbg=234
+highlight OtherLine ctermfg=144 ctermbg=234
+highlight JobLine cterm=reverse ctermfg=144 ctermbg=234
+highlight SuggestBox cterm=bold ctermfg=250 ctermbg=234
+highlight CmpMismatch cterm=bold ctermfg=250 ctermbg=235
+highlight CmpUnmatched cterm=bold ctermfg=144 ctermbg=235
+highlight CmpBlank ctermfg=144 ctermbg=234
+highlight AuxWin ctermfg=144 ctermbg=234
+highlight TabLine cterm=none ctermfg=144 ctermbg=234
+highlight TabLineSel cterm=bold ctermfg=144 ctermbg=234
+highlight User1 ctermfg=144 ctermbg=234
+highlight User2 ctermfg=144 ctermbg=234
+highlight User3 ctermfg=144 ctermbg=234
+highlight User4 ctermfg=144 ctermbg=234
+highlight User5 ctermfg=144 ctermbg=234
+highlight User6 ctermfg=144 ctermbg=234
+highlight User7 ctermfg=144 ctermbg=234
+highlight User8 ctermfg=144 ctermbg=234
+highlight User9 ctermfg=144 ctermbg=234
+highlight User10 ctermfg=144 ctermbg=234
+highlight User11 ctermfg=144 ctermbg=234
+highlight User12 ctermfg=144 ctermbg=234
+highlight User13 ctermfg=144 ctermbg=234
+highlight User14 ctermfg=144 ctermbg=234
+highlight User15 ctermfg=144 ctermbg=234
+highlight User16 ctermfg=144 ctermbg=234
+highlight User17 ctermfg=144 ctermbg=234
+highlight User18 ctermfg=144 ctermbg=234
+highlight User19 ctermfg=144 ctermbg=234
+highlight User20 ctermfg=144 ctermbg=234
+highlight OtherWin ctermfg=144 ctermbg=234
+highlight LineNr ctermfg=240 ctermbg=234
+highlight OddLine ctermfg=144 ctermbg=234
