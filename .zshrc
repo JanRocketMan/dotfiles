@@ -86,21 +86,6 @@ if command -v fzf &>/dev/null; then
     [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 fi
 
-# ── PATH additions ────────────────────────────────────────────────────────────
-
-# User tools (same paths as claude-sandbox)
-typeset -U path  # deduplicate
-path=(
-    "$HOME/.local/bin"
-    "$HOME/.local/gcc-11/bin"
-    "$HOME/ripgrep-14.1.0-x86_64-unknown-linux-musl"
-    "$HOME/fd-v10.1.0-x86_64-unknown-linux-musl"
-    "$HOME/nvim-linux64/bin"
-    "$HOME/yazi-x86_64-unknown-linux-musl"
-    "$HOME/go/bin"
-    $path
-)
-
 # ── Aliases ───────────────────────────────────────────────────────────────────
 
 [[ -f ~/.aliases ]] && source ~/.aliases
