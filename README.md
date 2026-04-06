@@ -15,38 +15,41 @@ stow -n -v .
 # Deploy
 stow .
 
-# Install claude-sandbox dependencies (bwrap, mitmproxy, CA certs)
+# Install all tools (reads URLs from TOOLS.md)
 bash install.sh
 ```
+
+## Security: centralized dependency manifest
+
+All external download URLs live in a single file: **[`TOOLS.md`](TOOLS.md)**.
+
+`install.sh` reads this manifest at runtime — it contains **zero hardcoded URLs**. If a tool is compromised or a release needs pinning to a different version, edit one row in `TOOLS.md`. No need to grep through shell scripts.
+
+This also makes auditing easy: `TOOLS.md` is the complete list of every remote resource this repo touches during installation.
 
 ## What's included
 
 ### `.claude/` — Claude Code config
 
-- `CLAUDE.md` — personal instructions (jj preference, Python style, GitLab workflow)
-- `settings.json` — permissions (allow/deny/ask), plugins, MCP servers
+- `CLAUDE.md` — personal instructions (jj preference, Python style)
+- `settings.json` — permissions (allow/deny/ask), plugins
 - `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
 - `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
+- `skills/` — on-demand skills for GitLab and Jira workflows
 
-### `.zshrc` / `.zshenv` — Zsh
+### `.zshrc` / `.zshenv` / `.aliases` — Zsh
 
 Fish-like zsh setup with zinit plugin manager:
-- **Powerlevel10k** — fast prompt with git status, shortened paths
-- **zsh-autosuggestions** — inline grey suggestions from history (accept with →)
-- **zsh-history-substring-search** — type partial command, press ↑/↓ to match
-- **zsh-syntax-highlighting** — command coloring like fish
-- **fzf** integration for fuzzy history search (Ctrl+R)
+- **Powerlevel10k** prompt, **autosuggestions**, **history-substring-search**, **syntax-highlighting**
+- **fzf** integration for fuzzy history (Ctrl+R)
+- Sources `.bashrc` first for SLURM/module compatibility
+- Shared `.aliases` file (claude, editors, tmux, ripgrep, SSH tunnel helpers)
 
 First launch installs plugins automatically. Run `p10k configure` to set up prompt style.
 
 ### `.config/nvim/` — Neovim
 
 [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) config (git submodule). Uses lazy.nvim — plugins install automatically on first launch.
-
-Update to latest:
-```bash
-git submodule update --remote .config/nvim
-```
 
 ### `.local/bin/claude-sandbox` — Bubblewrap sandbox for Claude Code
 
@@ -59,25 +62,23 @@ Confines Claude Code to a minimal filesystem view using Linux user namespaces �
 - Optional `--proxy` flag for mitmproxy-based credential injection
 
 ```bash
-claude-sandbox ~/myproject              # basic sandbox
-claude-sandbox --proxy ~/myproject      # with credential injection
-claude-sandbox --shell ~/myproject      # debug with bash
-claude-sandbox --dry-run ~/myproject    # see the full bwrap command
+claude ~/myproject              # sandboxed (alias for claude-sandbox)
+claude --proxy ~/myproject      # with credential injection
+claude-unsafe                   # unsandboxed, plan permission mode
 ```
 
 ### `.config/vifm/` — Vifm file manager
 
-- `vifmrc` — config (sets codeyellow colorscheme)
-- `colors/codeyellow.vifm` — symlink to `.config/nvim/colors/codeyellow.vifm` (shared theme)
+- `vifmrc` — config (codeyellow colorscheme)
+- `colors/codeyellow.vifm` — symlink to nvim's copy (shared theme)
 
 ### `.config/proxy-creds/` — Credential injection proxy
 
 - `inject_credentials.py` — mitmproxy addon for header injection
-- `credentials.json.example` — template for API token mapping (copy to `credentials.json` and fill in)
+- `credentials.json.example` — template for API token mapping
 
 ## Requirements
 
-- Linux with user namespaces enabled (`cat /proc/sys/kernel/unprivileged_userns_clone` → 1)
+- Linux or macOS (both supported by `install.sh`)
 - No root/sudo needed
-- `stow` (usually pre-installed or `apt install stow`)
-- `uv` (for mitmproxy install, optional)
+- `stow` (`apt install stow` / `brew install stow`)

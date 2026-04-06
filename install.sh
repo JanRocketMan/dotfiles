@@ -4,8 +4,16 @@ set -euo pipefail
 # install.sh — Bootstrap dotfiles dependencies on a new machine.
 # Run AFTER `stow .` has symlinked everything into place.
 #
-# Supports Linux (x86_64, aarch64) and macOS (arm64, x86_64).
-# All tools are installed to ~/.local/bin/ (no sudo required).
+# All download URLs come from TOOLS.md — the single source of truth
+# for external dependencies. If a tool is compromised, edit that file.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANIFEST="$SCRIPT_DIR/TOOLS.md"
+
+if [[ ! -f "$MANIFEST" ]]; then
+    echo "error: TOOLS.md not found at $MANIFEST" >&2
+    exit 1
+fi
 
 mkdir -p "$HOME/.local/bin"
 
@@ -20,52 +28,70 @@ case "$OS_RAW" in
     *)      echo "error: unsupported OS: $OS_RAW" >&2; exit 1 ;;
 esac
 
-# Arch aliases used by different projects
 case "$ARCH" in
-    x86_64)
-        ARCH_ALT="amd64"           # fzf, jq
-        RUST_TARGET_LINUX="x86_64-unknown-linux-musl"
-        RUST_TARGET_DARWIN="x86_64-apple-darwin"
-        NVIM_PLATFORM_LINUX="linux-x86_64"
-        NVIM_PLATFORM_DARWIN="macos-x86_64"
-        ;;
-    aarch64|arm64)
-        ARCH="aarch64"
-        ARCH_ALT="arm64"
-        RUST_TARGET_LINUX="aarch64-unknown-linux-musl"
-        RUST_TARGET_DARWIN="aarch64-apple-darwin"
-        NVIM_PLATFORM_LINUX="linux-arm64"
-        NVIM_PLATFORM_DARWIN="macos-arm64"
-        ;;
-    *)
-        echo "error: unsupported architecture: $ARCH" >&2; exit 1
-        ;;
+    x86_64)          ARCH="x86_64"  ;;
+    aarch64|arm64)   ARCH="aarch64" ;;
+    *)               echo "error: unsupported arch: $ARCH" >&2; exit 1 ;;
 esac
 
-# Select the right target triple for Rust-built tools (rg, fd, jj)
-if [[ "$OS" == "linux" ]]; then
-    RUST_TARGET="$RUST_TARGET_LINUX"
-    NVIM_PLATFORM="$NVIM_PLATFORM_LINUX"
-else
-    RUST_TARGET="$RUST_TARGET_DARWIN"
-    NVIM_PLATFORM="$NVIM_PLATFORM_DARWIN"
-fi
+PLATFORM="${OS}-${ARCH}"
 
 echo "=== Installing dotfiles dependencies ==="
-echo "Platform: $OS / $ARCH"
+echo "Platform: $PLATFORM"
+echo "Manifest: $MANIFEST"
 echo ""
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Manifest lookup ───────────────────────────────────────────────────────────
 
-# Install a tool from a GitHub release tarball
-# Usage: gh_install NAME VERSION URL [BINARY_PATH]
-gh_install() {
-    local name="$1" version="$2" url="$3" bin_path="${4:-$1}"
+# Look up a field from TOOLS.md for a given tool and platform.
+# Falls back to "all" platform if exact match not found.
+# Usage: manifest_get TOOL FIELD
+#   FIELD: url (col 5), binary (col 6), method (col 7)
+manifest_get() {
+    local tool="$1" field="$2"
+    local col
+    case "$field" in
+        url)    col=5 ;;
+        binary) col=6 ;;
+        method) col=7 ;;
+        *)      echo "error: unknown field: $field" >&2; return 1 ;;
+    esac
+
+    # Try exact platform, then OS-all, then all
+    local result
+    for try_plat in "$PLATFORM" "${OS}-all" "all"; do
+        result=$(awk -F'|' -v tool=" $tool " -v plat=" $try_plat " \
+            'NR>2 && $2 ~ tool && $4 ~ plat {
+                val = $'$col'
+                gsub(/^[ `]+|[ `]+$/, "", val)
+                print val
+                exit
+            }' "$MANIFEST")
+        if [[ -n "$result" && "$result" != "-" ]]; then
+            echo "$result"
+            return 0
+        fi
+    done
+    echo ""
+}
+
+# ── Install helpers ───────────────────────────────────────────────────────────
+
+# Install from tarball: download, extract, copy binary to ~/.local/bin
+install_tarball() {
+    local name="$1"
     if command -v "$name" &>/dev/null; then
         echo "[ok] $name already installed: $("$name" --version 2>&1 | head -1)"
         return
     fi
-    echo "[..] Installing $name $version..."
+    local url bin_path
+    url="$(manifest_get "$name" url)"
+    bin_path="$(manifest_get "$name" binary)"
+    if [[ -z "$url" ]]; then
+        echo "[skip] $name: no URL for $PLATFORM"
+        return
+    fi
+    echo "[..] Installing $name..."
     local tmpdir
     tmpdir="$(mktemp -d)"
     (
@@ -79,111 +105,90 @@ gh_install() {
     echo "[ok] $name installed: $("$name" --version 2>&1 | head -1)"
 }
 
+# Install a raw binary (no archive)
+install_binary() {
+    local name="$1"
+    if command -v "$name" &>/dev/null; then
+        echo "[ok] $name already installed: $("$name" --version 2>&1 | head -1)"
+        return
+    fi
+    local url
+    url="$(manifest_get "$name" url)"
+    if [[ -z "$url" ]]; then
+        echo "[skip] $name: no URL for $PLATFORM"
+        return
+    fi
+    echo "[..] Installing $name..."
+    wget -q "$url" -O "$HOME/.local/bin/$name"
+    chmod +x "$HOME/.local/bin/$name"
+    echo "[ok] $name installed: $("$name" --version 2>&1 | head -1)"
+}
+
 # ── CLI tools ─────────────────────────────────────────────────────────────────
 
-# ripgrep
-RG_VERSION="14.1.0"
-gh_install rg "$RG_VERSION" \
-    "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RUST_TARGET}.tar.gz" \
-    "ripgrep-${RG_VERSION}-${RUST_TARGET}/rg"
-
-# fd
-FD_VERSION="10.1.0"
-gh_install fd "$FD_VERSION" \
-    "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${RUST_TARGET}.tar.gz" \
-    "fd-v${FD_VERSION}-${RUST_TARGET}/fd"
-
-# fzf
-FZF_VERSION="0.62.0"
-gh_install fzf "$FZF_VERSION" \
-    "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-${OS}_${ARCH_ALT}.tar.gz" \
-    "fzf"
-
-# jq (single binary, not tarball)
-JQ_VERSION="1.7.1"
-if command -v jq &>/dev/null; then
-    echo "[ok] jq already installed: $(jq --version 2>&1)"
-else
-    echo "[..] Installing jq $JQ_VERSION..."
-    JQ_OS="$OS"
-    [[ "$OS" == "darwin" ]] && JQ_OS="macos"
-    wget -q "https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-${JQ_OS}-${ARCH_ALT}" \
-        -O "$HOME/.local/bin/jq"
-    chmod +x "$HOME/.local/bin/jq"
-    echo "[ok] jq installed: $(jq --version 2>&1)"
-fi
+install_tarball rg
+install_tarball fd
+install_tarball fzf
+install_binary jq
 
 # ── Editors & file managers ───────────────────────────────────────────────────
 
-# Neovim (extracts as a directory tree with bin/, lib/, share/)
-NVIM_VERSION="0.10.3"
+# Neovim: tarball-tree (directory with bin/, lib/, share/)
 if command -v nvim &>/dev/null; then
     echo "[ok] nvim already installed: $(nvim --version 2>&1 | head -1)"
 else
-    echo "[..] Installing nvim $NVIM_VERSION..."
-    tmpdir="$(mktemp -d)"
-    (
-        cd "$tmpdir"
-        wget -q "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-${NVIM_PLATFORM}.tar.gz" \
-            -O nvim.tar.gz
-        tar xzf nvim.tar.gz
-        rm -rf "$HOME/nvim-linux64"
-        mv nvim-${NVIM_PLATFORM} "$HOME/nvim-linux64"
-    )
-    rm -rf "$tmpdir"
-    echo "[ok] nvim installed: $(nvim --version 2>&1 | head -1)"
+    url="$(manifest_get nvim url)"
+    bin_path="$(manifest_get nvim binary)"
+    if [[ -n "$url" ]]; then
+        echo "[..] Installing nvim..."
+        tmpdir="$(mktemp -d)"
+        (
+            cd "$tmpdir"
+            wget -q "$url" -O nvim.tar.gz
+            tar xzf nvim.tar.gz
+            rm -rf "$HOME/nvim-linux64"
+            mv "$bin_path" "$HOME/nvim-linux64"
+        )
+        rm -rf "$tmpdir"
+        echo "[ok] nvim installed: $(nvim --version 2>&1 | head -1)"
+    else
+        echo "[skip] nvim: no URL for $PLATFORM"
+    fi
 fi
 
-# vifm (Linux: GitHub release tarball; macOS: brew)
-VIFM_VERSION="0.14"
+# vifm: tarball on Linux, brew on macOS
 if command -v vifm &>/dev/null; then
     echo "[ok] vifm already installed: $(vifm --version 2>&1 | head -1)"
 else
-    if [[ "$OS" == "linux" ]]; then
-        gh_install vifm "$VIFM_VERSION" \
-            "https://github.com/vifm/vifm/releases/download/v${VIFM_VERSION}/vifm-v${VIFM_VERSION}-${ARCH}.tar.gz" \
-            "vifm-v${VIFM_VERSION}-${ARCH}/vifm"
-    else
+    method="$(manifest_get vifm method)"
+    if [[ "$method" == "tarball" ]]; then
+        install_tarball vifm
+    elif [[ "$method" == "brew" ]]; then
         if command -v brew &>/dev/null; then
             echo "[..] Installing vifm via brew..."
             brew install vifm
             echo "[ok] vifm installed"
         else
-            echo "[skip] vifm: no Linux binary for macOS and brew not found"
+            echo "[skip] vifm: brew not found"
         fi
+    else
+        echo "[skip] vifm: no install method for $PLATFORM"
     fi
 fi
 
 # ── VCS ───────────────────────────────────────────────────────────────────────
 
-# Jujutsu (jj)
-JJ_VERSION="0.28.2"
-if command -v jj &>/dev/null; then
-    echo "[ok] jj already installed: $(jj version 2>&1)"
-else
-    echo "[..] Installing jj $JJ_VERSION..."
-    tmpdir="$(mktemp -d)"
-    (
-        cd "$tmpdir"
-        wget -q "https://github.com/jj-vcs/jj/releases/download/v${JJ_VERSION}/jj-v${JJ_VERSION}-${RUST_TARGET}.tar.gz" \
-            -O jj.tar.gz
-        tar xzf jj.tar.gz
-        cp jj "$HOME/.local/bin/jj"
-        chmod +x "$HOME/.local/bin/jj"
-    )
-    rm -rf "$tmpdir"
-    echo "[ok] jj installed: $(jj version 2>&1)"
-fi
+install_tarball jj
 
 # ── Python tooling ────────────────────────────────────────────────────────────
 
-# uv
 if command -v uv &>/dev/null; then
     echo "[ok] uv already installed: $(uv --version 2>&1)"
 else
+    url="$(manifest_get uv url)"
     echo "[..] Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    echo "[ok] uv installed: $(uv --version 2>&1)"
+    curl -LsSf "$url" | sh
+    echo "[ok] uv installed"
 fi
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
@@ -191,29 +196,37 @@ fi
 if command -v claude &>/dev/null 2>&1; then
     echo "[ok] claude already installed: $(command claude --version 2>&1 | head -1)"
 else
-    echo "[..] Installing Claude Code..."
-    if command -v npm &>/dev/null; then
-        npm install -g @anthropic-ai/claude-code
-        echo "[ok] claude installed: $(command claude --version 2>&1 | head -1)"
-    else
-        echo "[skip] Claude Code requires npm. Install Node.js first, then: npm install -g @anthropic-ai/claude-code"
+    method="$(manifest_get claude method)"
+    if [[ "$method" == "npm" ]]; then
+        pkg="$(manifest_get claude url)"
+        pkg="${pkg#npm:}"  # strip npm: prefix
+        if command -v npm &>/dev/null; then
+            echo "[..] Installing Claude Code..."
+            npm install -g "$pkg"
+            echo "[ok] claude installed"
+        else
+            echo "[skip] Claude Code requires npm. Install Node.js first, then: npm install -g $pkg"
+        fi
     fi
 fi
 
-# ── Sandbox dependencies (Linux only) ────────────────────────────────────────
+# ── Sandbox dependencies ─────────────────────────────────────────────────────
 
-if [[ "$OS" == "linux" ]]; then
-    # bubblewrap — extracted from .deb, no sudo
+# bubblewrap (Linux only, from .deb)
+method="$(manifest_get bwrap method)"
+if [[ "$method" == "deb" ]]; then
     if command -v bwrap &>/dev/null; then
         echo "[ok] bwrap already installed: $(bwrap --version)"
     else
+        pkg="$(manifest_get bwrap url)"
+        pkg="${pkg#apt:}"  # strip apt: prefix
         echo "[..] Installing bwrap from .deb..."
         tmpdir="$(mktemp -d)"
         (
             cd "$tmpdir"
-            apt download bubblewrap 2>/dev/null
+            apt download "$pkg" 2>/dev/null
             mkdir extract
-            dpkg -x bubblewrap_*.deb extract
+            dpkg -x "${pkg}"_*.deb extract
             cp extract/usr/bin/bwrap "$HOME/.local/bin/bwrap"
             chmod +x "$HOME/.local/bin/bwrap"
         )
@@ -224,16 +237,19 @@ else
     echo "[skip] bwrap: Linux only (macOS uses sandbox-exec)"
 fi
 
-# mitmproxy (optional, for --proxy flag)
+# mitmproxy (via uv tool)
 if command -v mitmdump &>/dev/null; then
     echo "[ok] mitmdump already installed: $(mitmdump --version 2>&1 | head -1)"
 else
-    if command -v uv &>/dev/null; then
+    method="$(manifest_get mitmproxy method)"
+    if [[ "$method" == "uv-tool" ]] && command -v uv &>/dev/null; then
+        pkg="$(manifest_get mitmproxy url)"
+        pkg="${pkg#uv-tool:}"
         echo "[..] Installing mitmproxy via uv..."
-        uv tool install mitmproxy
+        uv tool install "$pkg"
         echo "[ok] mitmdump installed"
     else
-        echo "[skip] mitmproxy: uv not found. Install manually for --proxy support."
+        echo "[skip] mitmproxy: uv not found"
     fi
 fi
 
@@ -246,7 +262,6 @@ fi
 
 # Combined CA bundle
 if [[ -f "$HOME/.mitmproxy/mitmproxy-ca-cert.pem" ]]; then
-    # System CA bundle location differs by OS
     if [[ "$OS" == "linux" ]]; then
         SYSTEM_CA="/etc/ssl/certs/ca-certificates.crt"
     else
@@ -256,7 +271,7 @@ if [[ -f "$HOME/.mitmproxy/mitmproxy-ca-cert.pem" ]]; then
         cat "$SYSTEM_CA" "$HOME/.mitmproxy/mitmproxy-ca-cert.pem" > "$HOME/.mitmproxy/combined-ca.pem"
         echo "[ok] Combined CA bundle created"
     else
-        echo "[warn] System CA bundle not found at $SYSTEM_CA — skip combined CA"
+        echo "[warn] System CA bundle not found at $SYSTEM_CA"
     fi
 fi
 
@@ -266,9 +281,10 @@ ZINIT_HOME="${HOME}/.local/share/zinit/zinit.git"
 if [[ -d "$ZINIT_HOME" ]]; then
     echo "[ok] zinit already installed"
 else
+    url="$(manifest_get zinit url)"
     echo "[..] Installing zinit..."
     mkdir -p "$(dirname "$ZINIT_HOME")"
-    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+    git clone "$url" "$ZINIT_HOME"
     echo "[ok] zinit installed"
 fi
 
@@ -284,7 +300,7 @@ CRED_EXAMPLE="$HOME/.config/proxy-creds/credentials.json.example"
 if [[ ! -f "$CRED_FILE" ]] && [[ -f "$CRED_EXAMPLE" ]]; then
     mkdir -p "$(dirname "$CRED_FILE")"
     cp "$CRED_EXAMPLE" "$CRED_FILE"
-    echo "[ok] Created $CRED_FILE from example — edit it with your real tokens"
+    echo "[ok] Created $CRED_FILE from example"
 elif [[ -f "$CRED_FILE" ]]; then
     echo "[ok] $CRED_FILE already exists"
 fi
@@ -302,7 +318,7 @@ if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
             echo "" >> "$PROFILE"
             echo "# Auto-switch to zsh on login (no sudo for chsh)" >> "$PROFILE"
             echo "$EXEC_LINE" >> "$PROFILE"
-            echo "[ok] Added zsh exec to $PROFILE (chsh unavailable without sudo)"
+            echo "[ok] Added zsh exec to $PROFILE"
         else
             echo "[ok] $PROFILE already execs zsh"
         fi
@@ -310,7 +326,7 @@ if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
 elif [[ -n "$ZSH_PATH" ]]; then
     echo "[ok] Default shell is already zsh"
 else
-    echo "[warn] zsh not found. Install it first (apt install zsh / brew install zsh)"
+    echo "[warn] zsh not found (apt install zsh / brew install zsh)"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
