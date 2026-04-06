@@ -1,50 +1,6 @@
 # dotfiles
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/).
-
-## Packages
-
-### `nvim`
-
-Neovim configuration via [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) (git submodule). Uses lazy.nvim for plugin management.
-
-```bash
-stow nvim                    # symlinks ~/.config/nvim
-nvim                         # first launch installs plugins automatically
-```
-
-Update to latest config:
-```bash
-cd ~/dotfiles
-git submodule update --remote nvim/.config/nvim
-```
-
-### `claude`
-
-Claude Code global configuration — instructions, permissions, keybindings, statusline.
-
-```bash
-stow claude    # symlinks ~/.claude/{CLAUDE.md,settings.json,keybindings.json,statusline-command.sh}
-```
-
-Files:
-- `CLAUDE.md` — personal instructions (jj preference, Python style, GitLab workflow)
-- `settings.json` — permissions (allow/deny/ask), plugins, MCP servers
-- `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
-- `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
-
-### `claude-sandbox`
-
-Bubblewrap-based sandbox for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Confines the AI agent to a minimal filesystem view using Linux user namespaces — no root required.
-
-**What it protects:**
-- SSH private keys are invisible (auth via ssh-agent socket)
-- `.env` files are masked to `/dev/null`
-- Environment is wiped clean (`env -i`), only essential vars forwarded
-- `.venv` is read-only, project dir is read-write
-- Other home directory contents don't exist in the sandbox
-
-**Optional:** `--proxy` flag starts a mitmproxy-based credential injection proxy that intercepts HTTPS requests and injects auth headers. The sandbox never sees real API tokens.
+Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). The repo root mirrors `$HOME` — deploy everything with `stow .`.
 
 ## Setup
 
@@ -53,52 +9,55 @@ Bubblewrap-based sandbox for [Claude Code](https://docs.anthropic.com/en/docs/cl
 git clone --recurse-submodules git@github.com:JanRocketMan/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-# Symlink packages into home directory
-stow nvim              # ~/.config/nvim -> frozen.nvim
-stow claude            # ~/.claude/{CLAUDE.md,settings.json,...}
-stow claude-sandbox    # ~/.local/bin/claude-sandbox, ~/.config/proxy-creds/
+# Dry run (preview what will be symlinked)
+stow -n -v .
+
+# Deploy
+stow .
 
 # Install claude-sandbox dependencies (bwrap, mitmproxy, CA certs)
-bash claude-sandbox/install.sh
+bash install.sh
 ```
 
-## Usage
+## What's included
+
+### `.claude/` — Claude Code config
+
+- `CLAUDE.md` — personal instructions (jj preference, Python style, GitLab workflow)
+- `settings.json` — permissions (allow/deny/ask), plugins, MCP servers
+- `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
+- `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
+
+### `.config/nvim/` — Neovim
+
+[frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) config (git submodule). Uses lazy.nvim — plugins install automatically on first launch.
+
+Update to latest:
+```bash
+git submodule update --remote .config/nvim
+```
+
+### `.local/bin/claude-sandbox` — Bubblewrap sandbox for Claude Code
+
+Confines Claude Code to a minimal filesystem view using Linux user namespaces — no root required.
+
+- SSH private keys invisible (auth via ssh-agent socket)
+- `.env` files masked to `/dev/null`
+- Environment wiped clean (`env -i`), only essential vars forwarded
+- `.venv` read-only, project dir read-write
+- Optional `--proxy` flag for mitmproxy-based credential injection
 
 ```bash
-# Basic — sandbox Claude to one project directory
-claude-sandbox ~/myproject
-
-# With credential injection proxy
-claude-sandbox --proxy ~/myproject
-
-# Extra read-only mounts (e.g. CUDA on a cluster)
-claude-sandbox --ro /cm/shared ~/myproject
-
-# Debug the sandbox with a shell
-claude-sandbox --shell ~/myproject -- -c 'ls ~/.ssh'
-
-# See the full bwrap command
-claude-sandbox --dry-run ~/myproject
+claude-sandbox ~/myproject              # basic sandbox
+claude-sandbox --proxy ~/myproject      # with credential injection
+claude-sandbox --shell ~/myproject      # debug with bash
+claude-sandbox --dry-run ~/myproject    # see the full bwrap command
 ```
 
-## Files
+### `.config/proxy-creds/` — Credential injection proxy
 
-After `stow claude-sandbox`, these symlinks are created:
-
-```
-~/.local/bin/claude-sandbox              → Main launcher script
-~/.config/proxy-creds/inject_credentials.py  → mitmproxy addon
-~/.config/proxy-creds/credentials.json.example → Template for API token mapping
-```
-
-Generated during `install.sh` (not version-controlled):
-
-```
-~/.local/bin/bwrap                       → Bubblewrap binary (from .deb)
-~/.mitmproxy/                            → mitmproxy CA certs
-~/.mitmproxy/combined-ca.pem             → System CAs + mitmproxy CA
-~/.config/proxy-creds/credentials.json   → Your real API token mapping
-```
+- `inject_credentials.py` — mitmproxy addon for header injection
+- `credentials.json.example` — template for API token mapping (copy to `credentials.json` and fill in)
 
 ## Requirements
 
