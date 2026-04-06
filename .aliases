@@ -30,3 +30,13 @@ alias upu='uv pip uninstall'
 # ripgrep
 alias rg='rg --vimgrep'
 alias ro='rg -uu --vimgrep'
+
+# SSH tunnel helpers
+# frp PORT — kill all SSH tunnels forwarding a given port
+frp() {
+    if lsof -i :"$1" | grep "$USER"; then
+        kill -9 $(lsof -i :"$1" | grep "$USER" | awk '{print $2}')
+    fi
+}
+# fp PORT HOST — create SSH port forward
+fp() { ssh -fN -L "$1":localhost:"$1" "$2"; }
