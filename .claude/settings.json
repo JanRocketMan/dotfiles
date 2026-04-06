@@ -13,7 +13,6 @@
       "Glob",
       "WebSearch",
       "WebFetch",
-      "mcp__gitlab-cli__*",
       "Edit(~/.claude/settings.json)",
       "Edit(~/.claude/settings.local.json)",
       "Edit(**/.claude/settings.json)",
