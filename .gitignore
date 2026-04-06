@@ -1,0 +1,7 @@
+# Real credentials (never commit)
+credentials.json
+!credentials.json.example
+
+# Generated files
+*.pyc
+__pycache__/
