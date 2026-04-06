@@ -1,0 +1,5 @@
+import sys
+import pdb, numpy as np
+pdb.Pdb.do_p=lambda s,a: s.message((lambda v: f"{v.dtype}{v.shape} ∈ ∅" if isinstance(v,np.ndarray) and v.size==0 else (f"{v.dtype}{v.shape} ∈ [{float(np.nanmin(v)):.2e}, {float(np.nanmax(v)):.2e}]" if isinstance(v,np.ndarray) else repr(v)))(s._getval(a)))
+
+if "torch" in sys.modules: setattr(sys.modules["torch"].Tensor, "__repr__", lambda self: f"{str(self.dtype).replace('torch.', '').replace('float32', 'fp32').replace('bfloat16', 'bf16').replace('float16', 'fp16')}{tuple(self.shape)} ∈ [{self.min().float():.2e}, {self.max().float():.2e}] @ {str(self.device)}")
