@@ -148,21 +148,22 @@ slaunch() {
     "${srun_args[@]}" "${srun_tail[@]}"
 }
 
-# SLURM info aliases
-alias si='sinfo -o "%20P %5D %14F %8z %10m %11l %32f %N"'
-alias si2='sinfo -o "%20P %5D %6t %8z %10m %10d %11l %32f %N"'
-alias sq='squeue -o "%8i %12j %4t %10u %20q %20a %10g %20P %10Q %5D %11l %11L %R"'
+# SLURM aliases (only defined if srun is available)
+if command -v srun &>/dev/null; then
+    alias si='sinfo -o "%20P %5D %14F %8z %10m %11l %32f %N"'
+    alias si2='sinfo -o "%20P %5D %6t %8z %10m %10d %11l %32f %N"'
+    alias sq='squeue -o "%8i %12j %4t %10u %20q %20a %10g %20P %10Q %5D %11l %11L %R"'
 
-# Convenience aliases (all point to standard tier by default)
-alias sbash='slaunch standard 1 bash'
-alias spython='slaunch standard 1 python'
-alias s4python='slaunch small 4 python'
-alias s8python='slaunch small 8 python'
-alias s88python='slaunch standard 8 python'
-alias sa8bash='slaunch standard 8 bash'
-alias hpython='slaunch hyper 1 python'
-alias h8bash='slaunch hyper 8 bash'
-alias h8python='slaunch hyper 8 python'
+    alias sbash='slaunch standard 1 bash'
+    alias spython='slaunch standard 1 python'
+    alias s4python='slaunch small 4 python'
+    alias s8python='slaunch small 8 python'
+    alias s88python='slaunch standard 8 python'
+    alias sa8bash='slaunch standard 8 bash'
+    alias hpython='slaunch hyper 1 python'
+    alias h8bash='slaunch hyper 8 bash'
+    alias h8python='slaunch hyper 8 python'
+fi
 
 # SSH tunnel helpers
 # frp PORT — kill all SSH tunnels forwarding a given port
