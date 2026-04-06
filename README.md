@@ -54,6 +54,11 @@ claude-sandbox --shell ~/myproject      # debug with bash
 claude-sandbox --dry-run ~/myproject    # see the full bwrap command
 ```
 
+### `.config/vifm/` — Vifm file manager
+
+- `vifmrc` — config (sets codeyellow colorscheme)
+- `colors/codeyellow.vifm` — symlink to `.config/nvim/colors/codeyellow.vifm` (shared theme)
+
 ### `.config/proxy-creds/` — Credential injection proxy
 
 - `inject_credentials.py` — mitmproxy addon for header injection

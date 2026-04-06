@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# install.sh — Bootstrap claude-sandbox dependencies on a new machine.
-# Run AFTER `stow claude-sandbox` has symlinked the scripts into place.
+# install.sh — Bootstrap dotfiles dependencies on a new machine.
+# Run AFTER `stow .` has symlinked everything into place.
 
-echo "=== Installing claude-sandbox dependencies ==="
+echo "=== Installing dotfiles dependencies ==="
 
 # 1. Install bubblewrap (no sudo required)
 if command -v bwrap &>/dev/null; then
@@ -70,6 +70,26 @@ else
     echo "[ok] $CRED_FILE already exists"
 fi
 
+# 7. Install vifm (no sudo required)
+VIFM_VERSION="0.14"
+if command -v vifm &>/dev/null; then
+    echo "[ok] vifm already installed: $(vifm --version 2>&1 | head -1)"
+else
+    echo "[..] Installing vifm ${VIFM_VERSION}..."
+    TMPDIR="$(mktemp -d)"
+    ARCH="$(uname -m)"
+    (
+        cd "$TMPDIR"
+        wget -q "https://github.com/vifm/vifm/releases/download/v${VIFM_VERSION}/vifm-v${VIFM_VERSION}-${ARCH}.tar.gz" \
+            -O vifm.tar.gz
+        tar xzf vifm.tar.gz
+        cp vifm-v${VIFM_VERSION}-${ARCH}/vifm "$HOME/.local/bin/vifm"
+        chmod +x "$HOME/.local/bin/vifm"
+    )
+    rm -rf "$TMPDIR"
+    echo "[ok] vifm installed: $(vifm --version 2>&1 | head -1)"
+fi
+
 echo ""
 echo "=== Done ==="
 echo ""
@@ -77,5 +97,6 @@ echo "Usage:"
 echo "  claude-sandbox ~/myproject              # basic sandbox"
 echo "  claude-sandbox --proxy ~/myproject       # with credential injection"
 echo "  claude-sandbox --shell ~/myproject       # debug with bash"
+echo "  vifm                                     # file manager"
 echo ""
 echo "Edit ~/.config/proxy-creds/credentials.json to add your API tokens for --proxy mode."
