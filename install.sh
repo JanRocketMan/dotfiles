@@ -358,5 +358,9 @@ for cmd in rg fd fzf jq nvim vifm jj uv claude bwrap mitmdump; do
     fi
 done
 echo ""
-echo "Run 'p10k configure' to set up your prompt style."
-echo "Edit ~/.config/proxy-creds/credentials.json for --proxy mode."
+echo "Next steps:"
+echo "  p10k configure                              # set up prompt style"
+echo "  Edit ~/.config/proxy-creds/credentials.json # API tokens for --proxy mode"
+if command -v srun &>/dev/null; then
+    echo "  Edit ~/.config/slurm/cluster.conf           # partition names for this cluster"
+fi

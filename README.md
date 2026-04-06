@@ -43,7 +43,7 @@ Fish-like zsh setup with zinit plugin manager:
 - **Powerlevel10k** prompt, **autosuggestions**, **history-substring-search**, **syntax-highlighting**
 - **fzf** integration for fuzzy history (Ctrl+R)
 - Sources `.bashrc` first for SLURM/module compatibility
-- Shared `.aliases` file (claude, editors, tmux, ripgrep, SSH tunnel helpers)
+- Shared `.aliases` file (claude, editors, tmux, ripgrep, SSH tunnel helpers, SLURM launchers)
 
 First launch installs plugins automatically. Run `p10k configure` to set up prompt style.
 
@@ -76,6 +76,19 @@ claude-unsafe                   # unsandboxed, plan permission mode
 
 - `inject_credentials.py` — mitmproxy addon for header injection
 - `credentials.json.example` — template for API token mapping
+
+### `.config/slurm/` — SLURM cluster config
+
+Configurable `slaunch` command for GPU job submission. Partition names and resources are defined in `cluster.conf` (machine-specific, gitignored).
+
+```bash
+slaunch standard 1 bash              # interactive shell, 1 GPU
+slaunch standard 1 python train.py   # single GPU
+slaunch small 8 python train.py      # 8 GPUs (auto torchrun)
+slaunch hyper 2x8 python train.py    # 2 nodes × 8 GPUs
+```
+
+On a SLURM cluster, edit `~/.config/slurm/cluster.conf` with your partition names. Short aliases (`sbash`, `spython`, `s8python`, etc.) are auto-registered when `srun` is available.
 
 ## Requirements
 
