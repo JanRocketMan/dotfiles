@@ -35,6 +35,135 @@ alias pcp='pcpctl'
 alias rg='rg --vimgrep'
 alias ro='rg -uu --vimgrep'
 
+# ── SLURM ─────────────────────────────────────────────────────────────────────
+
+SLURM_CLUSTER_CONF="$HOME/.config/slurm/cluster.conf"
+
+# Read a key from a [tier] section in cluster.conf
+# Usage: _slurm_conf_get TIER KEY
+_slurm_conf_get() {
+    local tier="$1" key="$2"
+    awk -v tier="[$tier]" -v key="$key" '
+        $0 == tier { found=1; next }
+        /^\[/ { found=0 }
+        found && $1 == key && $2 == "=" { print $3 }
+    ' "$SLURM_CLUSTER_CONF" 2>/dev/null
+}
+
+# slaunch TIER GPUS COMMAND [ARGS...]
+#
+# TIER:    tier name from cluster.conf (small, standard, hyper, ...)
+# GPUS:    1, 4, 8, or NxM for multi-node (e.g. 2x8)
+# COMMAND: bash | python [ARGS...]
+#
+# Examples:
+#   slaunch standard 1 bash
+#   slaunch standard 1 python train.py
+#   slaunch small 8 python -m train --lr 1e-4
+#   slaunch hyper 2x8 python train.py
+slaunch() {
+    if [[ ! -f "$SLURM_CLUSTER_CONF" ]]; then
+        echo "error: $SLURM_CLUSTER_CONF not found" >&2
+        echo "  cp ~/.config/slurm/cluster.conf.example ~/.config/slurm/cluster.conf" >&2
+        return 1
+    fi
+
+    if [[ $# -lt 3 ]]; then
+        echo "usage: slaunch TIER GPUS COMMAND [ARGS...]" >&2
+        return 1
+    fi
+
+    local tier="$1" gpu_spec="$2"
+    shift 2
+
+    local partition mem_per_gpu cpus_per_gpu exclude
+    partition="$(_slurm_conf_get "$tier" partition)"
+    mem_per_gpu="$(_slurm_conf_get "$tier" mem_per_gpu)"
+    cpus_per_gpu="$(_slurm_conf_get "$tier" cpus_per_gpu)"
+    exclude="$(_slurm_conf_get "$tier" exclude)"
+
+    if [[ -z "$partition" ]]; then
+        echo "error: unknown tier '$tier' — check $SLURM_CLUSTER_CONF" >&2
+        return 1
+    fi
+
+    local nodes=1 ntasks=1 gpus cmd_prefix=""
+
+    # Parse gpu_spec: "8" or "2x8"
+    if [[ "$gpu_spec" == *x* ]]; then
+        nodes="${gpu_spec%%x*}"
+        gpus="${gpu_spec##*x}"
+        ntasks="$nodes"
+    else
+        gpus="$gpu_spec"
+    fi
+
+    local total_cpus=$(( gpus * cpus_per_gpu ))
+
+    # Build command tail
+    local command="$1"
+    shift
+
+    local srun_tail=()
+    case "$command" in
+        bash)
+            srun_tail=(--pty /bin/bash -i)
+            ;;
+        python)
+            if [[ "$nodes" -gt 1 ]]; then
+                srun_tail=(python -u -m torch.distributed.run \
+                    --nnodes="$nodes" --nproc_per_node=gpu \
+                    --rdzv-id=$RANDOM --rdzv-backend=c10d \
+                    "$@")
+            elif [[ "$gpus" -gt 1 ]]; then
+                srun_tail=(python -u -m torch.distributed.run \
+                    --nproc_per_node="$gpus" \
+                    "$@")
+            else
+                srun_tail=(python -u "$@")
+            fi
+            ;;
+        *)
+            srun_tail=("$command" "$@")
+            ;;
+    esac
+
+    # Build srun command
+    local srun_args=(
+        srun
+        --nodes="$nodes"
+        --ntasks="$ntasks"
+        --cpus-per-task="$total_cpus"
+        --mem-per-gpu="$mem_per_gpu"
+        --gres="gpu:$gpus"
+        --partition="$partition"
+        --time=UNLIMITED
+    )
+
+    if [[ -n "$exclude" ]]; then
+        srun_args+=(--exclude="$exclude")
+    fi
+
+    echo "+ ${srun_args[*]} ${srun_tail[*]}" >&2
+    "${srun_args[@]}" "${srun_tail[@]}"
+}
+
+# SLURM info aliases
+alias si='sinfo -o "%20P %5D %14F %8z %10m %11l %32f %N"'
+alias si2='sinfo -o "%20P %5D %6t %8z %10m %10d %11l %32f %N"'
+alias sq='squeue -o "%8i %12j %4t %10u %20q %20a %10g %20P %10Q %5D %11l %11L %R"'
+
+# Convenience aliases (all point to standard tier by default)
+alias sbash='slaunch standard 1 bash'
+alias spython='slaunch standard 1 python'
+alias s4python='slaunch small 4 python'
+alias s8python='slaunch small 8 python'
+alias s88python='slaunch standard 8 python'
+alias sa8bash='slaunch standard 8 bash'
+alias hpython='slaunch hyper 1 python'
+alias h8bash='slaunch hyper 8 bash'
+alias h8python='slaunch hyper 8 python'
+
 # SSH tunnel helpers
 # frp PORT — kill all SSH tunnels forwarding a given port
 frp() {

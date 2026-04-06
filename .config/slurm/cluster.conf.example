@@ -1,0 +1,24 @@
+# Cluster configuration for slaunch.
+# Copy to cluster.conf and edit for your cluster.
+#
+# Format: [tier_name]
+#   partition = SLURM partition name
+#   mem_per_gpu = memory per GPU (e.g. 40G, 80G)
+#   cpus_per_gpu = CPUs allocated per GPU
+#   exclude = (optional) comma-separated node exclude list
+
+[small]
+partition = scalar6000q
+mem_per_gpu = 40G
+cpus_per_gpu = 10
+exclude = lambda-scalar029
+
+[standard]
+partition = scalar100q
+mem_per_gpu = 80G
+cpus_per_gpu = 10
+
+[hyper]
+partition = hyperplaneq
+mem_per_gpu = 100G
+cpus_per_gpu = 10

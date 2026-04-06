@@ -1,6 +1,9 @@
 # Real credentials (never commit)
 .config/proxy-creds/credentials.json
 
+# Machine-specific cluster config
+.config/slurm/cluster.conf
+
 # Claude Code transient state
 .claude/settings.local.json
 .claude/backups/

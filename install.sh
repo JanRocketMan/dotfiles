@@ -309,6 +309,17 @@ elif [[ -f "$CRED_FILE" ]]; then
     echo "[ok] $CRED_FILE already exists"
 fi
 
+# Create cluster.conf from example if missing
+CLUSTER_CONF="$HOME/.config/slurm/cluster.conf"
+CLUSTER_EXAMPLE="$HOME/.config/slurm/cluster.conf.example"
+if [[ ! -f "$CLUSTER_CONF" ]] && [[ -f "$CLUSTER_EXAMPLE" ]]; then
+    mkdir -p "$(dirname "$CLUSTER_CONF")"
+    cp "$CLUSTER_EXAMPLE" "$CLUSTER_CONF"
+    echo "[ok] Created $CLUSTER_CONF from example — edit partition names for this cluster"
+elif [[ -f "$CLUSTER_CONF" ]]; then
+    echo "[ok] $CLUSTER_CONF already exists"
+fi
+
 # ── Default shell ─────────────────────────────────────────────────────────────
 
 ZSH_PATH="$(command -v zsh 2>/dev/null || true)"
