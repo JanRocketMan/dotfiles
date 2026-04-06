@@ -156,13 +156,17 @@ else
     fi
 fi
 
-# vifm: tarball on Linux, brew on macOS
+# vifm: AppImage on Linux x86_64, brew on macOS / Linux aarch64
 if command -v vifm &>/dev/null; then
     echo "[ok] vifm already installed: $(vifm --version 2>&1 | head -1)"
 else
     method="$(manifest_get vifm method)"
-    if [[ "$method" == "tarball" ]]; then
-        install_tarball vifm
+    if [[ "$method" == "appimage" ]]; then
+        url="$(manifest_get vifm url)"
+        echo "[..] Installing vifm (AppImage)..."
+        wget -q "$url" -O "$HOME/.local/bin/vifm"
+        chmod +x "$HOME/.local/bin/vifm"
+        echo "[ok] vifm installed: $(vifm --version 2>&1 | head -1)"
     elif [[ "$method" == "brew" ]]; then
         if command -v brew &>/dev/null; then
             echo "[..] Installing vifm via brew..."
