@@ -2,10 +2,11 @@
 
 # Claude: sandboxed by default, explicit opt-out
 alias claude='claude-sandbox'
-alias claude-unsafe='command claude'
+alias claude-unsafe='command claude --permission-mode plan'
 
 # Editors
 alias v='nvim'
+alias vim='nvim -u ~/.config/nvim/lua/init.lua'
 
 # ls
 alias ll='ls -lah --color=auto'
@@ -16,3 +17,16 @@ alias l='ls -CF --color=auto'
 alias jl='jj log'
 alias jd='jj diff'
 alias js='jj status'
+
+# tmux
+alias ta='tmux a'
+alias tn='tmux new'
+
+# Python / debugging
+alias dpython='python -m debugpy --wait-for-client --listen'
+alias upi='uv pip install'
+alias upu='uv pip uninstall'
+
+# ripgrep
+alias rg='rg --vimgrep'
+alias ro='rg -uu --vimgrep'
