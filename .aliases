@@ -1,0 +1,18 @@
+# Shared aliases — sourced by .zshrc (and .bashrc if desired)
+
+# Claude: sandboxed by default, explicit opt-out
+alias claude='claude-sandbox'
+alias claude-unsafe='command claude'
+
+# Editors
+alias v='nvim'
+
+# ls
+alias ll='ls -lah --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls -CF --color=auto'
+
+# jj (jujutsu) shortcuts
+alias jl='jj log'
+alias jd='jj diff'
+alias js='jj status'
