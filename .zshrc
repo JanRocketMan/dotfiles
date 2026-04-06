@@ -78,12 +78,6 @@ autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' menu select
 
-# ── zoxide (overrides bash init from .bashrc) ─────────────────────────────────
-
-if command -v zoxide &>/dev/null; then
-    eval "$(zoxide init zsh)"
-fi
-
 # ── fzf integration ───────────────────────────────────────────────────────────
 
 if command -v fzf &>/dev/null; then
