@@ -1,5 +1,14 @@
 # .zshrc — sourced for interactive shells only
 
+# ── Source .bashrc for env setup (SLURM, modules, etc.) ──────────────────────
+
+# Many systems put important config in .bashrc (module loads, SLURM paths,
+# conda init, etc.). Source it in emulate-sh mode so bash-only builtins
+# (shopt, bind, etc.) are silently ignored instead of erroring.
+if [[ -f "$HOME/.bashrc" ]]; then
+    emulate sh -c 'source "$HOME/.bashrc"' 2>/dev/null
+fi
+
 # ── Zinit plugin manager ──────────────────────────────────────────────────────
 
 ZINIT_HOME="${HOME}/.local/share/zinit/zinit.git"

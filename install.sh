@@ -133,20 +133,17 @@ if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
     if chsh -s "$ZSH_PATH" 2>/dev/null; then
         echo "[ok] Default shell set to $ZSH_PATH"
     else
-        # chsh may need sudo or may not be available
-        # Fallback: set via ~/.bashrc exec hack if bash is current shell
-        if [[ "$SHELL" == *"bash"* ]]; then
-            EXEC_LINE="[[ -x $ZSH_PATH ]] && exec $ZSH_PATH -l"
-            if ! grep -qF "$EXEC_LINE" "$HOME/.bashrc" 2>/dev/null; then
-                echo "" >> "$HOME/.bashrc"
-                echo "# Auto-switch to zsh (no sudo for chsh)" >> "$HOME/.bashrc"
-                echo "$EXEC_LINE" >> "$HOME/.bashrc"
-                echo "[ok] Added zsh exec to ~/.bashrc (chsh unavailable without sudo)"
-            else
-                echo "[ok] ~/.bashrc already execs zsh"
-            fi
+        # chsh may need sudo — add exec to .bash_profile instead of .bashrc
+        # (.zshrc sources .bashrc, so putting exec in .bashrc would loop)
+        PROFILE="$HOME/.bash_profile"
+        EXEC_LINE="[[ -x $ZSH_PATH && -z \$ZSH_VERSION ]] && exec $ZSH_PATH -l"
+        if ! grep -qF "exec $ZSH_PATH" "$PROFILE" 2>/dev/null; then
+            echo "" >> "$PROFILE"
+            echo "# Auto-switch to zsh on login (no sudo for chsh)" >> "$PROFILE"
+            echo "$EXEC_LINE" >> "$PROFILE"
+            echo "[ok] Added zsh exec to $PROFILE (chsh unavailable without sudo)"
         else
-            echo "[warn] Could not set default shell. Run: chsh -s $ZSH_PATH"
+            echo "[ok] $PROFILE already execs zsh"
         fi
     fi
 else
