@@ -27,6 +27,9 @@ alias dpython='python -m debugpy --wait-for-client --listen'
 alias upi='uv pip install'
 alias upu='uv pip uninstall'
 
+# pcpctl
+alias pcp='pcpctl'
+
 # ripgrep
 alias rg='rg --vimgrep'
 alias ro='rg -uu --vimgrep'
