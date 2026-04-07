@@ -40,11 +40,17 @@
   # ── dir (current directory) ──────────────────────────────────────────────
 
   typeset -g POWERLEVEL9K_DIR_FOREGROUND=green
-  typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_from_right
-  typeset -g POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+  typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
+  typeset -g POWERLEVEL9K_SHORTEN_DIR_LENGTH=1
   typeset -g POWERLEVEL9K_SHORTEN_DELIMITER=
   typeset -g POWERLEVEL9K_DIR_ANCHOR_BOLD=false
   typeset -g POWERLEVEL9K_DIR_SHOW_WRITABLE=false
+  # No folder icons
+  typeset -g POWERLEVEL9K_DIR_ETC_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_DIR_HOME_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_DIR_HOME_SUBFOLDER_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_DIR_DEFAULT_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_DIR_NOT_WRITABLE_VISUAL_IDENTIFIER_EXPANSION=
 
   # ── vcs (git status — commit hash only) ─────────────────────────────────
 
@@ -58,6 +64,9 @@
   # Format: @commit_hash !num_changes
   typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='@${${VCS_STATUS_COMMIT[1,8]}:-?}${${VCS_STATUS_NUM_STAGED:#0}:+ !${VCS_STATUS_NUM_STAGED}}${${VCS_STATUS_NUM_UNSTAGED:#0}:+ !${VCS_STATUS_NUM_UNSTAGED}}${${VCS_STATUS_NUM_UNTRACKED:#0}:+ ?${VCS_STATUS_NUM_UNTRACKED}}'
   typeset -g POWERLEVEL9K_VCS_BACKENDS=(git)
+  # No git icon
+  typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=
 
   # ── Misc ─────────────────────────────────────────────────────────────────
 
