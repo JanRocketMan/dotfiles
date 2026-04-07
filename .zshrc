@@ -96,6 +96,9 @@ if command -v fzf &>/dev/null; then
     [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 fi
 
+# Prevent venv activate from modifying PS1 (p10k handles the prompt)
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
 # ── Auto-activate .venv on directory entry ────────────────────────────────────
 
 _auto_venv() {

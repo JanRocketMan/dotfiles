@@ -13,7 +13,7 @@
   unset -m '(POWERLEVEL9K_*|DEFAULT_USER)~POWERLEVEL9K_GITSTATUS_DIR'
 
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
-    context dir vcs
+    virtualenv context dir vcs
   )
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=()
 
@@ -67,6 +67,18 @@
   # No git icon
   typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION=
   typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=
+
+  # ── virtualenv ────────────────────────────────────────────────────────────
+
+  typeset -g POWERLEVEL9K_VIRTUALENV_FOREGROUND=default
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_PYTHON_VERSION=false
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_WITH_PYENV=false
+  typeset -g POWERLEVEL9K_VIRTUALENV_VISUAL_IDENTIFIER_EXPANSION=
+  typeset -g POWERLEVEL9K_VIRTUALENV_LEFT_DELIMITER='('
+  typeset -g POWERLEVEL9K_VIRTUALENV_RIGHT_DELIMITER=')'
+  # Show only the venv directory name, not the full path
+  typeset -g POWERLEVEL9K_VIRTUALENV_GENERIC_NAMES=()
+  typeset -g POWERLEVEL9K_VIRTUALENV_{PYENV_PROMPT,PYENV_PREFIX}=
 
   # ── Misc ─────────────────────────────────────────────────────────────────
 
