@@ -1,5 +1,6 @@
 \.git
 \.gitmodules
+\.jj
 ^/README\.md
 ^/LICENSE
 ^/install\.sh
