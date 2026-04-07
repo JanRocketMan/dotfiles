@@ -24,11 +24,6 @@ source "${ZINIT_HOME}/zinit.zsh"
 zinit ice depth=1
 zinit light romkatv/powerlevel10k
 
-# Enable Powerlevel10k instant prompt (must be near top of .zshrc)
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # Load p10k config if it exists
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
