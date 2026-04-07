@@ -27,26 +27,30 @@ zinit light romkatv/powerlevel10k
 # Load p10k config if it exists
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
-# ── Fish-like plugins ─────────────────────────────────────────────────────────
+# ── Fish-like plugins (turbo-loaded: deferred until after first prompt) ───────
 
 # Inline grey suggestions from history (accept with →)
+zinit ice wait lucid
 zinit light zsh-users/zsh-autosuggestions
 
 # Fish-like history substring search (type partial command, press ↑/↓)
+# atload: bind Up/Down after the plugin is available
+zinit ice wait lucid atload'bindkey "^[[A" history-substring-search-up; bindkey "^[[B" history-substring-search-down'
 zinit light zsh-users/zsh-history-substring-search
 
 # Syntax highlighting (like fish)
-zinit light zsh-users/zsh-syntax-highlighting
-
-# Fish-like highlighting colors
+# atload: set highlight colors after the plugin is available
+zinit ice wait lucid atload'
 typeset -gA ZSH_HIGHLIGHT_STYLES
-ZSH_HIGHLIGHT_STYLES[command]='fg=blue'              # valid commands (ls, cd, etc.)
-ZSH_HIGHLIGHT_STYLES[builtin]='fg=blue'              # shell builtins (cd, echo, etc.)
-ZSH_HIGHLIGHT_STYLES[alias]='fg=blue'                # aliases
-ZSH_HIGHLIGHT_STYLES[function]='fg=blue'             # functions
-ZSH_HIGHLIGHT_STYLES[precommand]='fg=blue,underline' # sudo, nohup, etc.
-ZSH_HIGHLIGHT_STYLES[path]='fg=cyan,underline'       # file/directory paths
-ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'          # unknown commands
+ZSH_HIGHLIGHT_STYLES[command]="fg=blue"
+ZSH_HIGHLIGHT_STYLES[builtin]="fg=blue"
+ZSH_HIGHLIGHT_STYLES[alias]="fg=blue"
+ZSH_HIGHLIGHT_STYLES[function]="fg=blue"
+ZSH_HIGHLIGHT_STYLES[precommand]="fg=blue,underline"
+ZSH_HIGHLIGHT_STYLES[path]="fg=cyan,underline"
+ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=red"
+'
+zinit light zsh-users/zsh-syntax-highlighting
 
 # ── History ───────────────────────────────────────────────────────────────────
 
@@ -60,9 +64,7 @@ setopt APPEND_HISTORY
 
 # ── Key bindings ──────────────────────────────────────────────────────────────
 
-# History substring search with Up/Down arrows
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
+# (Up/Down for history-substring-search are bound in the plugin's atload above)
 
 # Ctrl+Arrow word navigation
 bindkey '^[[1;5C' forward-word
@@ -79,7 +81,13 @@ bindkey '^[[3~' delete-char
 
 # ── Completion ────────────────────────────────────────────────────────────────
 
-autoload -Uz compinit && compinit
+# Rebuild .zcompdump at most once a day; otherwise load cached
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+else
+    compinit -C
+fi
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' menu select
 
