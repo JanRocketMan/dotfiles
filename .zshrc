@@ -43,6 +43,16 @@ zinit light zsh-users/zsh-history-substring-search
 # Syntax highlighting (like fish)
 zinit light zsh-users/zsh-syntax-highlighting
 
+# Fish-like highlighting colors
+typeset -gA ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[command]='fg=blue'              # valid commands (ls, cd, etc.)
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=blue'              # shell builtins (cd, echo, etc.)
+ZSH_HIGHLIGHT_STYLES[alias]='fg=blue'                # aliases
+ZSH_HIGHLIGHT_STYLES[function]='fg=blue'             # functions
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=blue,underline' # sudo, nohup, etc.
+ZSH_HIGHLIGHT_STYLES[path]='fg=cyan,underline'       # file/directory paths
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'          # unknown commands
+
 # ── History ───────────────────────────────────────────────────────────────────
 
 HISTFILE=~/.zsh_history
