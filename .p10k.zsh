@@ -28,7 +28,7 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_FIRST_SEGMENT_START_SYMBOL=''
 
   # The > prompt is baked into the last segment's end symbol
-  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL='%(?:%F{green}>%f :%F{red}>%f )'
+  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL='%(?:%F{green}>%f:%F{red}>%f)'
 
   # ── context (user@host) ─────────────────────────────────────────────────
 
