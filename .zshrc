@@ -112,7 +112,7 @@ _auto_venv() {
     fi
     # Activate if cwd has a .venv (or hidden dir with pyvenv.cfg)
     if [[ -z "$VIRTUAL_ENV" ]]; then
-        for dir in .venv .*/; do
+        for dir in .venv .*/(N); do
             if [[ -f "${dir}pyvenv.cfg" && -f "${dir}bin/activate" ]]; then
                 source "${dir}bin/activate"
                 break
