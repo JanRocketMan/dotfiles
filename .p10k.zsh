@@ -32,7 +32,8 @@
 
   # ── context (user@host) ─────────────────────────────────────────────────
 
-  typeset -g POWERLEVEL9K_CONTEXT_TEMPLATE='%n@%m'
+  # Fish colors: green user, yellow host
+  typeset -g POWERLEVEL9K_CONTEXT_TEMPLATE='%F{green}%n%f@%F{yellow}%m%f'
   typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,REMOTE}_FOREGROUND=default
   typeset -g POWERLEVEL9K_CONTEXT_{SUDO,REMOTE_SUDO,ROOT}_FOREGROUND=red
 
@@ -47,9 +48,9 @@
 
   # ── vcs (git status — commit hash only) ─────────────────────────────────
 
-  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=green
-  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=yellow
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=yellow
+  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=default
+  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=default
+  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=default
   typeset -g POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND=red
   typeset -g POWERLEVEL9K_VCS_LOADING_FOREGROUND=244
   typeset -g POWERLEVEL9K_VCS_PREFIX='(('
