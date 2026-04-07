@@ -28,17 +28,17 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_FIRST_SEGMENT_START_SYMBOL=''
 
   # The > prompt is baked into the last segment's end symbol
-  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL='%(?:%F{76}>%f:%F{196}>%f)'
+  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL='%(?:%F{green}>%f:%F{red}>%f)'
 
   # ── context (user@host) ─────────────────────────────────────────────────
 
   typeset -g POWERLEVEL9K_CONTEXT_TEMPLATE='%n@%m'
-  typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,REMOTE}_FOREGROUND=180
+  typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,REMOTE}_FOREGROUND=default
   typeset -g POWERLEVEL9K_CONTEXT_{SUDO,REMOTE_SUDO,ROOT}_FOREGROUND=red
 
   # ── dir (current directory) ──────────────────────────────────────────────
 
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND=31
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND=green
   typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_from_right
   typeset -g POWERLEVEL9K_SHORTEN_DIR_LENGTH=1
   typeset -g POWERLEVEL9K_SHORTEN_DELIMITER=
@@ -47,10 +47,10 @@
 
   # ── vcs (git status — commit hash only) ─────────────────────────────────
 
-  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=76
-  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=178
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=178
-  typeset -g POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND=196
+  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=green
+  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=yellow
+  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=yellow
+  typeset -g POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND=red
   typeset -g POWERLEVEL9K_VCS_LOADING_FOREGROUND=244
   typeset -g POWERLEVEL9K_VCS_PREFIX='(('
   typeset -g POWERLEVEL9K_VCS_SUFFIX='))'
