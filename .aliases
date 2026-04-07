@@ -167,6 +167,7 @@ fi
 
 # SSH tunnel helpers
 # frp PORT — kill all SSH tunnels forwarding a given port
+unalias frp fp 2>/dev/null
 frp() {
     local pids
     pids=$(lsof -ti :"$1" -u "$USER" -a 2>/dev/null)
