@@ -23,7 +23,6 @@
 .claude/policy-limits.json
 
 # Zsh generated/local
-.p10k.zsh
 .zsh_history
 .zshrc.local
 
