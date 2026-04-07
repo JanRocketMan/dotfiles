@@ -96,6 +96,27 @@ if command -v fzf &>/dev/null; then
     [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 fi
 
+# ── Auto-activate .venv on directory entry ────────────────────────────────────
+
+_auto_venv() {
+    # Deactivate if we left the venv's project
+    if [[ -n "$VIRTUAL_ENV" && ! "$PWD" == "${VIRTUAL_ENV%/.venv*}"* ]]; then
+        deactivate
+    fi
+    # Activate if cwd has a .venv (or hidden dir with pyvenv.cfg)
+    if [[ -z "$VIRTUAL_ENV" ]]; then
+        for dir in .venv .*/; do
+            if [[ -f "${dir}pyvenv.cfg" && -f "${dir}bin/activate" ]]; then
+                source "${dir}bin/activate"
+                break
+            fi
+        done
+    fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _auto_venv
+_auto_venv  # run once on shell start
+
 # ── Aliases ───────────────────────────────────────────────────────────────────
 
 [[ -f ~/.aliases ]] && source ~/.aliases
