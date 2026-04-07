@@ -132,6 +132,7 @@
     "code-simplifier@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true
   },
+  "model": "claude-opus-4-6",
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "showThinkingSummaries": true,
