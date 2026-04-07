@@ -104,7 +104,11 @@ export VIRTUAL_ENV_DISABLE_PROMPT=1
 _auto_venv() {
     # Deactivate if we left the venv's project
     if [[ -n "$VIRTUAL_ENV" && ! "$PWD" == "${VIRTUAL_ENV%/.venv*}"* ]]; then
-        deactivate
+        if (( $+functions[deactivate] )); then
+            deactivate
+        else
+            unset VIRTUAL_ENV
+        fi
     fi
     # Activate if cwd has a .venv (or hidden dir with pyvenv.cfg)
     if [[ -z "$VIRTUAL_ENV" ]]; then
