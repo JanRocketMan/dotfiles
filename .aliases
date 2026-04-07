@@ -1,8 +1,8 @@
 # Shared aliases — sourced by .zshrc (and .bashrc if desired)
 
 # Claude: sandboxed by default, explicit opt-out
-alias claude='claude-sandbox'
-alias claude-unsafe='command claude --permission-mode plan'
+alias claude='$HOME/.local/bin/claude-sandbox'
+alias claude-unsafe='$HOME/.local/bin/claude --permission-mode default'
 
 # Editors
 alias v='nvim'
