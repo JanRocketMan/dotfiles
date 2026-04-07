@@ -59,23 +59,21 @@
 
   function prompt_my_vcs() {
     # Try jj first
-    if command -v jj &>/dev/null; then
-      local jj_info
-      jj_info="$(jj log -r @ --no-graph -T 'change_id.shortest(8)' 2>/dev/null)"
-      if [[ -n "$jj_info" ]]; then
-        local jj_commit
-        jj_commit="$(jj log -r @ --no-graph -T 'commit_id.shortest(8)' 2>/dev/null)"
-        p10k segment -f default -t "on ${jj_info} @${jj_commit}"
-        return
+    if command -v jj &>/dev/null && jj root &>/dev/null; then
+      local branch
+      branch="$(jj log -r @ --no-graph -T 'bookmarks.map(|b| b.name()).join(", ")' 2>/dev/null)"
+      if [[ -z "$branch" ]]; then
+        # No bookmark on @ — check parent
+        branch="$(jj log -r @- --no-graph -T 'bookmarks.map(|b| b.name()).join(", ")' 2>/dev/null)"
       fi
+      [[ -n "$branch" ]] && p10k segment -f default -t "on ${branch}"
+      return
     fi
     # Fall back to git
     if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-      local commit
-      commit="$(git rev-parse --short=8 HEAD 2>/dev/null)"
-      if [[ -n "$commit" ]]; then
-        p10k segment -f default -t "on @${commit}"
-      fi
+      local branch
+      branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+      [[ -n "$branch" ]] && p10k segment -f default -t "on ${branch}"
     fi
   }
 
