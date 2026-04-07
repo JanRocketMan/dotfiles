@@ -15,6 +15,6 @@ for dir in $DOTDIRS; do
     COMMANDS+=" && source ${dir}/bin/activate"
   fi
 done
-COMMANDS+=" && bash -i"
+COMMANDS+=" && ${SHELL:-bash} -i"
 
 tmux split-window $SPLIT_FLAG "$COMMANDS"
