@@ -352,7 +352,8 @@ echo ""
 echo "Installed tools:"
 for cmd in rg fd fzf jq nvim vifm jj uv claude bwrap mitmdump; do
     if command -v "$cmd" &>/dev/null; then
-        printf "  %-12s %s\n" "$cmd" "$("$cmd" --version 2>&1 | head -1)"
+        ver="$(timeout 5 "$cmd" --version 2>&1 | head -1)" || ver="(installed)"
+        printf "  %-12s %s\n" "$cmd" "$ver"
     else
         printf "  %-12s %s\n" "$cmd" "(not installed)"
     fi
