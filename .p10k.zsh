@@ -13,7 +13,7 @@
   unset -m '(POWERLEVEL9K_*|DEFAULT_USER)~POWERLEVEL9K_GITSTATUS_DIR'
 
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
-    virtualenv context dir vcs
+    virtualenv context dir my_vcs
   )
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=()
 
@@ -52,21 +52,32 @@
   typeset -g POWERLEVEL9K_DIR_DEFAULT_VISUAL_IDENTIFIER_EXPANSION=
   typeset -g POWERLEVEL9K_DIR_NOT_WRITABLE_VISUAL_IDENTIFIER_EXPANSION=
 
-  # ── vcs (git status — commit hash only) ─────────────────────────────────
+  # ── my_vcs (jj preferred, git fallback) ──────────────────────────────────
 
-  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=default
-  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=default
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=default
-  typeset -g POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND=red
-  typeset -g POWERLEVEL9K_VCS_LOADING_FOREGROUND=244
-  typeset -g POWERLEVEL9K_VCS_PREFIX='on '
-  typeset -g POWERLEVEL9K_VCS_SUFFIX=''
-  # Format: @commit_hash !num_changes
-  typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='@${${VCS_STATUS_COMMIT[1,8]}:-?}'
-  typeset -g POWERLEVEL9K_VCS_BACKENDS=(git)
-  # No git icon
-  typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION=
-  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=
+  typeset -g POWERLEVEL9K_MY_VCS_FOREGROUND=default
+  typeset -g POWERLEVEL9K_MY_VCS_VISUAL_IDENTIFIER_EXPANSION=
+
+  function prompt_my_vcs() {
+    # Try jj first
+    if command -v jj &>/dev/null; then
+      local jj_info
+      jj_info="$(jj log -r @ --no-graph -T 'change_id.shortest(8)' 2>/dev/null)"
+      if [[ -n "$jj_info" ]]; then
+        local jj_commit
+        jj_commit="$(jj log -r @ --no-graph -T 'commit_id.shortest(8)' 2>/dev/null)"
+        p10k segment -f default -t "on ${jj_info} @${jj_commit}"
+        return
+      fi
+    fi
+    # Fall back to git
+    if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+      local commit
+      commit="$(git rev-parse --short=8 HEAD 2>/dev/null)"
+      if [[ -n "$commit" ]]; then
+        p10k segment -f default -t "on @${commit}"
+      fi
+    fi
+  }
 
   # ── virtualenv ────────────────────────────────────────────────────────────
 
