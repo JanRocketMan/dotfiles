@@ -13,7 +13,7 @@
   unset -m '(POWERLEVEL9K_*|DEFAULT_USER)~POWERLEVEL9K_GITSTATUS_DIR'
 
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
-    context dir vcs prompt_char
+    context dir vcs
   )
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=()
 
@@ -25,8 +25,10 @@
   typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=
   typeset -g POWERLEVEL9K_{LEFT,RIGHT}_SUBSEGMENT_SEPARATOR=' '
   typeset -g POWERLEVEL9K_{LEFT,RIGHT}_SEGMENT_SEPARATOR=
-  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL=''
   typeset -g POWERLEVEL9K_LEFT_PROMPT_FIRST_SEGMENT_START_SYMBOL=''
+
+  # The > prompt is baked into the last segment's end symbol
+  typeset -g POWERLEVEL9K_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL='%(?:%F{green}>%f :%F{red}>%f )'
 
   # ── context (user@host) ─────────────────────────────────────────────────
 
@@ -49,15 +51,6 @@
   typeset -g POWERLEVEL9K_VCS_SUFFIX='))'
   typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='${${VCS_STATUS_COMMIT[1,8]}:-?}'
   typeset -g POWERLEVEL9K_VCS_BACKENDS=(git)
-
-  # ── prompt_char (>) ──────────────────────────────────────────────────────
-
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=green
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_ERROR_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=red
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_{VIINS,VICMD,VIVIS,VIOWR}_CONTENT_EXPANSION='>'
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL=' '
-  # No space before >, no space in suffix (the expansion itself adds trailing space)
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_LEFT_{LEFT,RIGHT}_WHITESPACE=
 
   # ── Misc ─────────────────────────────────────────────────────────────────
 
