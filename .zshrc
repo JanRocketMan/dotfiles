@@ -110,14 +110,9 @@ _auto_venv() {
             unset VIRTUAL_ENV
         fi
     fi
-    # Activate if cwd has a .venv (or hidden dir with pyvenv.cfg)
-    if [[ -z "$VIRTUAL_ENV" ]]; then
-        for dir in .venv .*/(N); do
-            if [[ -f "${dir}pyvenv.cfg" && -f "${dir}bin/activate" ]]; then
-                source "${dir}bin/activate"
-                break
-            fi
-        done
+    # Activate if cwd has a .venv
+    if [[ -z "$VIRTUAL_ENV" && -f .venv/bin/activate ]]; then
+        source .venv/bin/activate
     fi
 }
 autoload -Uz add-zsh-hook
