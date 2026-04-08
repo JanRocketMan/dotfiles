@@ -299,14 +299,10 @@ mkdir -p "$HOME/.ssh"
 ssh-keyscan github.com gitlab.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
 echo "[ok] known_hosts updated"
 
-CRED_FILE="$HOME/.config/proxy-creds/credentials.json"
-CRED_EXAMPLE="$HOME/.config/proxy-creds/credentials.json.example"
-if [[ ! -f "$CRED_FILE" ]] && [[ -f "$CRED_EXAMPLE" ]]; then
-    mkdir -p "$(dirname "$CRED_FILE")"
-    cp "$CRED_EXAMPLE" "$CRED_FILE"
-    echo "[ok] Created $CRED_FILE from example"
-elif [[ -f "$CRED_FILE" ]]; then
-    echo "[ok] $CRED_FILE already exists"
+CRED_TEMPLATE="$HOME/.config/proxy-creds/credentials.template.json"
+if [[ -f "$CRED_TEMPLATE" ]]; then
+    echo "[ok] Credential template exists: $CRED_TEMPLATE"
+    echo "     Run 'proxy-creds-gen' to generate credentials.json from env vars"
 fi
 
 # Create cluster.conf from example if missing
@@ -361,7 +357,7 @@ done
 echo ""
 echo "Next steps:"
 echo "  p10k configure                              # set up prompt style"
-echo "  Edit ~/.config/proxy-creds/credentials.json # API tokens for --proxy mode"
+echo "  proxy-creds-gen                             # generate credentials.json from env"
 if command -v srun &>/dev/null; then
     echo "  Edit ~/.config/slurm/cluster.conf           # partition names for this cluster"
 fi

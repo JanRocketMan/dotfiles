@@ -29,13 +29,19 @@ set -euo pipefail
 #
 #   PROJECT_DIR defaults to the current working directory if omitted.
 #
+# Auto-detection:
+#   - GPU: if /dev/nvidiactl exists, NVIDIA devices are bind-mounted, /sys is
+#     exposed read-only, /dev/shm is added, and CUDA/NCCL/TORCH env vars are
+#     forwarded automatically.
+#   - Proxy: if ~/.config/proxy-creds/credentials.json exists (and mitmdump +
+#     combined CA are present), a credential-injection proxy starts automatically.
+#     Generate credentials.json from env vars with: proxy-creds-gen
+#
 # Options:
 #   --ro PATH      Extra read-only bind mount (repeatable)
 #   --rw PATH      Extra read-write bind mount (repeatable)
 #   --dry-run      Print the full bwrap command without executing
 #   --shell        Launch /bin/bash instead of claude (useful for debugging)
-#   --proxy        Start mitmdump credential-injection proxy; injects HTTP
-#                  headers per ~/.config/proxy-creds/credentials.json
 #
 # Examples:
 #   claude-sandbox ~/myproject
@@ -59,7 +65,6 @@ EXTRA_RO=()
 EXTRA_RW=()
 DRY_RUN=0
 USE_SHELL=0
-USE_PROXY=0
 CLAUDE_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -78,10 +83,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --shell)
             USE_SHELL=1
-            shift
-            ;;
-        --proxy)
-            USE_PROXY=1
             shift
             ;;
         --)
@@ -156,7 +157,7 @@ ensure_ssh_agent() {
 
 ensure_ssh_agent
 
-# ── Credential-injection proxy (optional) ─────────────────────────────────────
+# ── Credential-injection proxy (auto-detected) ──────────────────────────────
 
 PROXY_PORT=18080
 PROXY_ADDR="127.0.0.1:${PROXY_PORT}"
@@ -164,37 +165,30 @@ PROXY_PID_FILE="/tmp/mitmdump-claude-sandbox.pid"
 COMBINED_CA="$HOME_DIR/.mitmproxy/combined-ca.pem"
 ADDON_SCRIPT="$HOME_DIR/.config/proxy-creds/inject_credentials.py"
 CRED_MAPPING="$HOME_DIR/.config/proxy-creds/credentials.json"
+PROXY_ENABLED=0
 
-if [[ "$USE_PROXY" -eq 1 ]]; then
+if [[ -f "$CRED_MAPPING" ]] && [[ -s "$CRED_MAPPING" ]]; then
     if ! command -v mitmdump &>/dev/null; then
-        echo "error: --proxy requires mitmdump (install with: uv tool install mitmproxy)" >&2
-        exit 1
-    fi
-    if [[ ! -f "$CRED_MAPPING" ]]; then
-        echo "error: credential mapping not found: $CRED_MAPPING" >&2
-        exit 1
-    fi
-    if [[ ! -f "$COMBINED_CA" ]]; then
-        echo "error: combined CA bundle not found: $COMBINED_CA" >&2
-        echo "  Create it with: cat /etc/ssl/certs/ca-certificates.crt ~/.mitmproxy/mitmproxy-ca-cert.pem > $COMBINED_CA" >&2
-        exit 1
-    fi
-
-    # Start mitmdump if not already running
-    if [[ -f "$PROXY_PID_FILE" ]] && kill -0 "$(cat "$PROXY_PID_FILE")" 2>/dev/null; then
-        echo "Proxy already running (PID: $(cat "$PROXY_PID_FILE"))" >&2
+        echo "warning: $CRED_MAPPING found but mitmdump not installed (uv tool install mitmproxy)" >&2
+    elif [[ ! -f "$COMBINED_CA" ]]; then
+        echo "warning: $CRED_MAPPING found but combined CA missing: $COMBINED_CA" >&2
     else
-        mitmdump \
-            --listen-host 127.0.0.1 \
-            --listen-port "$PROXY_PORT" \
-            --set confdir="$HOME_DIR/.mitmproxy" \
-            -s "$ADDON_SCRIPT" \
-            --quiet \
-            &>/tmp/mitmdump-claude-sandbox.log &
-        echo $! > "$PROXY_PID_FILE"
-        echo "Started mitmdump proxy on $PROXY_ADDR (PID: $!)" >&2
-        # Brief wait for proxy to bind
-        sleep 1
+        PROXY_ENABLED=1
+        # Start mitmdump if not already running
+        if [[ -f "$PROXY_PID_FILE" ]] && kill -0 "$(cat "$PROXY_PID_FILE")" 2>/dev/null; then
+            echo "Proxy already running (PID: $(cat "$PROXY_PID_FILE"))" >&2
+        else
+            mitmdump \
+                --listen-host 127.0.0.1 \
+                --listen-port "$PROXY_PORT" \
+                --set confdir="$HOME_DIR/.mitmproxy" \
+                -s "$ADDON_SCRIPT" \
+                --quiet \
+                &>/tmp/mitmdump-claude-sandbox.log &
+            echo $! > "$PROXY_PID_FILE"
+            echo "Started mitmdump proxy on $PROXY_ADDR (PID: $!)" >&2
+            sleep 1
+        fi
     fi
 fi
 
@@ -215,6 +209,7 @@ RO_DIRS=(
     "$HOME_DIR/.local/gcc-11"
     "$HOME_DIR/.local/share/uv"
     "$HOME_DIR/.config/uv"
+    "$HOME_DIR/.config/jj"
     "$HOME_DIR/ripgrep-14.1.0-x86_64-unknown-linux-musl"
     "$HOME_DIR/fd-v10.1.0-x86_64-unknown-linux-musl"
     "$HOME_DIR/nvim-linux64"
@@ -310,6 +305,24 @@ for path in "${EXTRA_RW[@]}"; do
     fi
 done
 
+# ── GPU passthrough (auto-detected) ──────────────────────────────────────────
+
+GPU_DETECTED=0
+if [[ -c /dev/nvidiactl ]]; then
+    GPU_DETECTED=1
+
+    # NVIDIA device nodes + DRI render nodes
+    for dev in /dev/nvidia* /dev/dri/*; do
+        [[ -e "$dev" ]] && BWRAP_ARGS+=(--dev-bind "$dev" "$dev")
+    done
+
+    # sysfs (GPU info, NUMA topology — read-only in user namespace anyway)
+    [[ -d /sys ]] && BWRAP_ARGS+=(--ro-bind /sys /sys)
+
+    # shared memory for PyTorch DataLoader multiprocessing
+    BWRAP_ARGS+=(--tmpfs /dev/shm)
+fi
+
 # ── Environment ───────────────────────────────────────────────────────────────
 
 SANDBOX_PATH="$HOME_DIR/.local/bin"
@@ -330,8 +343,19 @@ for var in TERM LANG LC_ALL ANTHROPIC_API_KEY CLAUDE_CODE_NO_FLICKER SSH_AUTH_SO
     [[ -n "${!var:-}" ]] && BWRAP_ARGS+=(--setenv "$var" "${!var}")
 done
 
+# Forward CUDA / NCCL / PyTorch vars when GPU is detected
+if [[ "$GPU_DETECTED" -eq 1 ]]; then
+    while IFS='=' read -r var _; do
+        case "$var" in
+            CUDA_*|NCCL_*|TORCH_*|NVIDIA_*|CUDNN_*)
+                BWRAP_ARGS+=(--setenv "$var" "${!var}")
+                ;;
+        esac
+    done < <(env)
+fi
+
 # Proxy: inject CA cert + HTTP(S)_PROXY env vars
-if [[ "$USE_PROXY" -eq 1 ]]; then
+if [[ "$PROXY_ENABLED" -eq 1 ]]; then
     BWRAP_ARGS+=(--ro-bind "$COMBINED_CA" "$COMBINED_CA")
     BWRAP_ARGS+=(--setenv HTTP_PROXY "http://$PROXY_ADDR")
     BWRAP_ARGS+=(--setenv HTTPS_PROXY "http://$PROXY_ADDR")

@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Generate proxy credentials from environment variables.
+
+Reads ~/.config/proxy-creds/credentials.template.json, substitutes ${VAR}
+placeholders from the current environment, and writes credentials.json.
+
+Entries with unresolved placeholders are skipped (with a warning).
+
+Usage:
+  proxy-creds-gen          # substitute and write
+  proxy-creds-gen --check  # show what would be resolved/skipped, don't write
+"""
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+CONFIG_DIR = Path.home() / ".config" / "proxy-creds"
+TEMPLATE = CONFIG_DIR / "credentials.template.json"
+OUTPUT = CONFIG_DIR / "credentials.json"
+
+VAR_RE = re.compile(r"\$\{(\w+)}")
+
+
+def substitute(value: str) -> tuple[str, list[str]]:
+    """Replace ${VAR} with env values. Return (result, list of missing vars)."""
+    missing: list[str] = []
+
+    def _replace(m: re.Match[str]) -> str:
+        var = m.group(1)
+        val = os.environ.get(var)
+        if val is None:
+            missing.append(var)
+            return m.group(0)
+        return val
+
+    return VAR_RE.sub(_replace, value), missing
+
+
+def main() -> int:
+    check_only = "--check" in sys.argv[1:]
+
+    if not TEMPLATE.exists():
+        print(f"error: template not found: {TEMPLATE}", file=sys.stderr)
+        print(f"  Create it with ${{ENV_VAR}} placeholders, e.g.:", file=sys.stderr)
+        print(
+            f'  {{"api.example.com": {{"Authorization": "Bearer ${{MY_TOKEN}}"}}}}',
+            file=sys.stderr,
+        )
+        return 1
+
+    template: dict[str, dict[str, str]] = json.loads(TEMPLATE.read_text())
+
+    result: dict[str, dict[str, str]] = {}
+    for host, headers in template.items():
+        if host.startswith("_"):
+            continue
+        resolved: dict[str, str] = {}
+        skip = False
+        for header_name, header_value in headers.items():
+            value, missing = substitute(header_value)
+            if missing:
+                print(f"  skip {host}: {', '.join(missing)} not set", file=sys.stderr)
+                skip = True
+                break
+            resolved[header_name] = value
+        if not skip:
+            result[host] = resolved
+
+    if check_only:
+        for host in result:
+            print(f"  ok   {host}", file=sys.stderr)
+        print(f"{len(result)} host(s) would be written", file=sys.stderr)
+        return 0
+
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(json.dumps(result, indent=2) + "\n")
+    OUTPUT.chmod(0o600)
+
+    if result:
+        print(f"wrote {len(result)} host(s) to {OUTPUT}", file=sys.stderr)
+    else:
+        print(f"warning: no credentials resolved, {OUTPUT} is empty", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

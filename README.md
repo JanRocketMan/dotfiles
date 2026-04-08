@@ -59,11 +59,11 @@ Confines Claude Code to a minimal filesystem view using Linux user namespaces �
 - `.env` files masked to `/dev/null`
 - Environment wiped clean (`env -i`), only essential vars forwarded
 - `.venv` read-only, project dir read-write
-- Optional `--proxy` flag for mitmproxy-based credential injection
+- GPU auto-detected: NVIDIA devices, `/sys`, `/dev/shm`, CUDA env vars
+- Credential-injection proxy auto-detected via `credentials.json`
 
 ```bash
 claude ~/myproject              # sandboxed (alias for claude-sandbox)
-claude --proxy ~/myproject      # with credential injection
 claude-unsafe                   # unsandboxed, plan permission mode
 ```
 
@@ -75,7 +75,8 @@ claude-unsafe                   # unsandboxed, plan permission mode
 ### `.config/proxy-creds/` — Credential injection proxy
 
 - `inject_credentials.py` — mitmproxy addon for header injection
-- `credentials.json.example` — template for API token mapping
+- `credentials.template.json` — template with `${ENV_VAR}` placeholders
+- `proxy-creds-gen` (in `~/.local/bin/`) — generates `credentials.json` from env vars
 
 ### `.config/slurm/` — SLURM cluster config
 
