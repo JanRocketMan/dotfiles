@@ -2,13 +2,16 @@
 """Generate proxy credentials from environment variables.
 
 Reads ~/.config/proxy-creds/credentials.template.json, substitutes ${VAR}
-placeholders from the current environment, and writes credentials.json.
+placeholders from the current environment (plus any .env files passed as
+arguments), and writes credentials.json.
 
 Entries with unresolved placeholders are skipped (with a warning).
 
 Usage:
-  proxy-creds-gen          # substitute and write
-  proxy-creds-gen --check  # show what would be resolved/skipped, don't write
+  proxy-creds-gen                      # from current env only
+  proxy-creds-gen ~/project/.env       # load .env first, then substitute
+  proxy-creds-gen .env .env.prod       # multiple .env files (later wins)
+  proxy-creds-gen --check .env         # dry-run
 """
 import json
 import os
@@ -21,15 +24,32 @@ TEMPLATE = CONFIG_DIR / "credentials.template.json"
 OUTPUT = CONFIG_DIR / "credentials.json"
 
 VAR_RE = re.compile(r"\$\{(\w+)}")
+ENV_LINE_RE = re.compile(r"^([A-Za-z_]\w*)=(.*)$")
 
 
-def substitute(value: str) -> tuple[str, list[str]]:
+def load_env_file(path: Path, env: dict[str, str]) -> None:
+    """Parse a .env file into env dict. Handles quotes and comments."""
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        m = ENV_LINE_RE.match(line)
+        if not m:
+            continue
+        key, val = m.group(1), m.group(2)
+        # Strip optional quotes
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in ('"', "'"):
+            val = val[1:-1]
+        env[key] = val
+
+
+def substitute(value: str, env: dict[str, str]) -> tuple[str, list[str]]:
     """Replace ${VAR} with env values. Return (result, list of missing vars)."""
     missing: list[str] = []
 
     def _replace(m: re.Match[str]) -> str:
         var = m.group(1)
-        val = os.environ.get(var)
+        val = env.get(var)
         if val is None:
             missing.append(var)
             return m.group(0)
@@ -39,7 +59,18 @@ def substitute(value: str) -> tuple[str, list[str]]:
 
 
 def main() -> int:
-    check_only = "--check" in sys.argv[1:]
+    args = sys.argv[1:]
+    check_only = "--check" in args
+    env_files = [Path(a) for a in args if a != "--check"]
+
+    # Start with current environment, layer .env files on top
+    env: dict[str, str] = dict(os.environ)
+    for ef in env_files:
+        if not ef.exists():
+            print(f"error: {ef} not found", file=sys.stderr)
+            return 1
+        load_env_file(ef, env)
+        print(f"  loaded {ef}", file=sys.stderr)
 
     if not TEMPLATE.exists():
         print(f"error: template not found: {TEMPLATE}", file=sys.stderr)
@@ -59,7 +90,7 @@ def main() -> int:
         resolved: dict[str, str] = {}
         skip = False
         for header_name, header_value in headers.items():
-            value, missing = substitute(header_value)
+            value, missing = substitute(header_value, env)
             if missing:
                 print(f"  skip {host}: {', '.join(missing)} not set", file=sys.stderr)
                 skip = True
