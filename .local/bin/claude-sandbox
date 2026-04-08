@@ -192,6 +192,31 @@ if [[ -f "$CRED_MAPPING" ]] && [[ -s "$CRED_MAPPING" ]]; then
     fi
 fi
 
+# ── NSS fix for user-namespace sandboxes ─────────────────────────────────────
+# On LDAP/SSSD machines the current user may not appear in /etc/passwd.
+# Build a synthetic passwd + files-only nsswitch.conf so git/ssh can resolve
+# the UID inside the sandbox.
+
+SANDBOX_PASSWD=$(mktemp /tmp/claude-sandbox-passwd.XXXXXX)
+SANDBOX_NSSWITCH=$(mktemp /tmp/claude-sandbox-nsswitch.XXXXXX)
+trap 'rm -f "$SANDBOX_PASSWD" "$SANDBOX_NSSWITCH"' EXIT
+
+cp /etc/passwd "$SANDBOX_PASSWD" 2>/dev/null || true
+if ! grep -q "^${USER_NAME}:" "$SANDBOX_PASSWD" 2>/dev/null; then
+    getent passwd "$USER_NAME" >> "$SANDBOX_PASSWD" 2>/dev/null
+fi
+
+# Force files-only lookups — LDAP/SSSD sockets aren't in the sandbox
+cat > "$SANDBOX_NSSWITCH" <<'NSSEOF'
+passwd:     files
+group:      files
+shadow:     files
+hosts:      files dns
+networks:   files
+protocols:  files
+services:   files
+NSSEOF
+
 # ── Build bwrap command ───────────────────────────────────────────────────────
 
 BWRAP_ARGS=()
@@ -221,6 +246,10 @@ BWRAP_ARGS+=(--tmpfs "$HOME_DIR")
 for dir in "${RO_DIRS[@]}"; do
     [[ -d "$dir" ]] && BWRAP_ARGS+=(--ro-bind "$dir" "$dir")
 done
+
+# Overlay synthetic passwd + nsswitch on top of /etc (must come after /etc bind)
+BWRAP_ARGS+=(--ro-bind "$SANDBOX_PASSWD" /etc/passwd)
+BWRAP_ARGS+=(--ro-bind "$SANDBOX_NSSWITCH" /etc/nsswitch.conf)
 
 # /etc/resolv.conf is often a symlink into /run/systemd/resolve/ which isn't
 # mounted in the sandbox. Ensure the symlink target path exists so DNS works.
@@ -257,9 +286,15 @@ mkdir -p "$HOME_DIR/.cache"
 BWRAP_ARGS+=(--bind "$HOME_DIR/.cache" "$HOME_DIR/.cache")
 
 # SSH: config (ro) + known_hosts (rw) — NO private keys
+# Copy ssh config to a temp file so ownership matches inside the user namespace
+# (SSH rejects bind-mounted files with mismatched owner)
 BWRAP_ARGS+=(--tmpfs "$HOME_DIR/.ssh")
 if [[ -f "$HOME_DIR/.ssh/config" ]]; then
-    BWRAP_ARGS+=(--ro-bind "$HOME_DIR/.ssh/config" "$HOME_DIR/.ssh/config")
+    SANDBOX_SSH_CONFIG=$(mktemp /tmp/claude-sandbox-sshcfg.XXXXXX)
+    cp "$HOME_DIR/.ssh/config" "$SANDBOX_SSH_CONFIG"
+    chmod 600 "$SANDBOX_SSH_CONFIG"
+    trap 'rm -f "$SANDBOX_PASSWD" "$SANDBOX_NSSWITCH" "$SANDBOX_SSH_CONFIG"' EXIT
+    BWRAP_ARGS+=(--ro-bind "$SANDBOX_SSH_CONFIG" "$HOME_DIR/.ssh/config")
 fi
 if [[ -f "$HOME_DIR/.ssh/known_hosts" ]]; then
     BWRAP_ARGS+=(--bind "$HOME_DIR/.ssh/known_hosts" "$HOME_DIR/.ssh/known_hosts")
@@ -343,6 +378,16 @@ BWRAP_ARGS+=(--setenv CLAUDE_SANDBOX 1
 for var in TERM LANG LC_ALL ANTHROPIC_API_KEY CLAUDE_CODE_NO_FLICKER SSH_AUTH_SOCK; do
     [[ -n "${!var:-}" ]] && BWRAP_ARGS+=(--setenv "$var" "${!var}")
 done
+
+# SSH: skip system config (/etc/ssh/ssh_config) — its included files fail
+# ownership checks inside the user namespace (root UID is unmapped)
+BWRAP_ARGS+=(--setenv GIT_SSH_COMMAND "ssh -F $HOME_DIR/.ssh/config")
+
+# Forward jj identity so commits have proper authorship
+JJ_USER="${JJ_USER:-$(jj config get user.name 2>/dev/null || true)}"
+JJ_EMAIL="${JJ_EMAIL:-$(jj config get user.email 2>/dev/null || true)}"
+[[ -n "$JJ_USER" ]]  && BWRAP_ARGS+=(--setenv JJ_USER "$JJ_USER")
+[[ -n "$JJ_EMAIL" ]] && BWRAP_ARGS+=(--setenv JJ_EMAIL "$JJ_EMAIL")
 
 # Forward CUDA / NCCL / PyTorch vars when GPU is detected
 if [[ "$GPU_DETECTED" -eq 1 ]]; then
