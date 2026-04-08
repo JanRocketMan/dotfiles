@@ -333,7 +333,8 @@ SANDBOX_PATH+=":$HOME_DIR/.local/gcc-11/bin"
 SANDBOX_PATH+=":$HOME_DIR"
 SANDBOX_PATH+=":/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-BWRAP_ARGS+=(--setenv HOME "$HOME_DIR" --setenv USER "$USER_NAME"
+BWRAP_ARGS+=(--setenv CLAUDE_SANDBOX 1
+             --setenv HOME "$HOME_DIR" --setenv USER "$USER_NAME"
              --setenv PATH "$SANDBOX_PATH" --setenv SHELL /bin/bash
              --setenv TORCHINDUCTOR_CACHE_DIR "$HOME_DIR/.cache/torch/inductor"
              --setenv TRITON_CACHE_DIR "$HOME_DIR/.cache/triton")
