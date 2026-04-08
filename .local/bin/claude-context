@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# claude-context — Show the user-controlled context that Claude Code receives
+# on startup when launched from the current directory.
+#
+# Usage:
+#   claude-context
+
+PROJECT_DIR="$(pwd)"
+
+CLAUDE_HOME="${HOME}/.claude"
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+section() { printf '\n\033[1;36m== %s ==\033[0m\n\n' "$1"; }
+dim()     { printf '\033[2m%s\033[0m\n' "$1"; }
+
+show_file() {
+    local label="$1" path="$2"
+    if [[ -f "$path" ]]; then
+        echo "  $label: $path"
+        echo "  ────"
+        sed 's/^/  │ /' "$path"
+        echo ""
+    fi
+}
+
+# ── 1. CLAUDE.md chain ──────────────────────────────────────────────────────
+
+section "CLAUDE.md files (always loaded)"
+
+# Deduplicate by resolved (real) path
+declare -A seen_paths
+
+show_unique() {
+    local label="$1" path="$2"
+    local real
+    real="$(realpath "$path" 2>/dev/null)" || return
+    if [[ -z "${seen_paths[$real]:-}" ]]; then
+        seen_paths["$real"]=1
+        show_file "$label" "$path"
+    fi
+}
+
+# Global
+if [[ -f "$CLAUDE_HOME/CLAUDE.md" ]]; then
+    show_unique "Global" "$CLAUDE_HOME/CLAUDE.md"
+fi
+
+# Walk from project dir up to / collecting project-level CLAUDE.md files
+collected=()
+dir="$PROJECT_DIR"
+while true; do
+    for candidate in "$dir/CLAUDE.md" "$dir/.claude/CLAUDE.md"; do
+        if [[ -f "$candidate" ]]; then
+            collected+=("$candidate")
+        fi
+    done
+    parent="$(dirname "$dir")"
+    [[ "$parent" == "$dir" ]] && break
+    dir="$parent"
+done
+
+# Show in root→leaf order (reverse of how we collected)
+for (( i=${#collected[@]}-1; i>=0; i-- )); do
+    show_unique "Project" "${collected[$i]}"
+done
+
+if [[ ${#collected[@]} -eq 0 ]] && [[ ! -f "$CLAUDE_HOME/CLAUDE.md" ]]; then
+    dim "  (none found)"
+fi
+
+# ── 2. Skills ───────────────────────────────────────────────────────────────
+
+section "Skills"
+
+found_skills=0
+declare -A seen_skills
+for skills_dir in "$CLAUDE_HOME/skills" "$PROJECT_DIR/.claude/skills"; do
+    if [[ -d "$skills_dir" ]]; then
+        for skill in "$skills_dir"/*/SKILL.md; do
+            [[ -f "$skill" ]] || continue
+            real="$(realpath "$skill" 2>/dev/null)" || continue
+            [[ -n "${seen_skills[$real]:-}" ]] && continue
+            seen_skills["$real"]=1
+            found_skills=1
+            name="$(basename "$(dirname "$skill")")"
+            desc=""
+            if head -5 "$skill" | grep -q '^---'; then
+                desc="$(sed -n '/^description:/{ s/^description: *//; p; q; }' "$skill")"
+            fi
+            if [[ -n "$desc" ]]; then
+                echo "  - $name: $desc"
+            else
+                echo "  - $name"
+            fi
+        done
+    fi
+done
+
+[[ $found_skills -eq 0 ]] && dim "  (none)"
+
+# ── 3. Enabled plugins ─────────────────────────────────────────────────────
+
+section "Enabled plugins (from settings.json)"
+
+declare -A seen_settings
+for settings in "$CLAUDE_HOME/settings.json" "$PROJECT_DIR/.claude/settings.json"; do
+    if [[ -f "$settings" ]]; then
+        real="$(realpath "$settings" 2>/dev/null)" || continue
+        [[ -n "${seen_settings[$real]:-}" ]] && continue
+        seen_settings["$real"]=1
+        plugins="$(jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "$settings" 2>/dev/null || true)"
+        if [[ -n "$plugins" ]]; then
+            echo "  Source: $settings"
+            echo "$plugins" | sed 's/^/  - /'
+            echo ""
+        fi
+    fi
+done
+
+# ── 4. MCP servers ──────────────────────────────────────────────────────────
+
+section "MCP servers"
+
+if command -v claude &>/dev/null; then
+    claude mcp list 2>&1 | sed 's/^/  /'
+else
+    dim "  (claude CLI not found, cannot list MCPs)"
+fi
+
+# ── 5. Git status ───────────────────────────────────────────────────────────
+
+section "Git status (snapshot injected at startup)"
+
+if [[ -d "$PROJECT_DIR/.git" ]] || [[ -d "$PROJECT_DIR/.jj" ]]; then
+    branch="$(git -C "$PROJECT_DIR" branch --show-current 2>/dev/null || echo "detached")"
+    echo "  Branch: $branch"
+    echo "  Recent commits:"
+    git -C "$PROJECT_DIR" log --oneline -5 2>/dev/null | sed 's/^/    /'
+    echo ""
+    echo "  Status:"
+    status="$(git -C "$PROJECT_DIR" status --short 2>/dev/null)"
+    if [[ -n "$status" ]]; then
+        echo "$status" | sed 's/^/    /'
+    else
+        echo "    (clean)"
+    fi
+else
+    dim "  (not a git repo)"
+fi
+
+# ── 6. Memory ───────────────────────────────────────────────────────────────
+
+section "Memory (auto memory index)"
+
+# Claude Code encodes the project path: /a/b/c → -a-b-c
+encoded="$(echo "$PROJECT_DIR" | tr '/' '-')"
+memory_dir="$CLAUDE_HOME/projects/${encoded}/memory"
+memory_index="$memory_dir/MEMORY.md"
+
+if [[ -f "$memory_index" ]]; then
+    echo "  Index: $memory_index"
+    echo "  ────"
+    sed 's/^/  │ /' "$memory_index"
+    echo ""
+    echo "  Memory files:"
+    find "$memory_dir" -name '*.md' ! -name 'MEMORY.md' -printf '    %f\n' 2>/dev/null | sort
+else
+    dim "  (no memory for this project)"
+fi
+
+# ── 7. Current date ────────────────────────────────────────────────────────
+
+section "Current date (always injected)"
+
+echo "  Today's date is $(date +%Y-%m-%d)."
+echo ""
