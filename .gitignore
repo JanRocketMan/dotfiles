@@ -5,6 +5,8 @@
 .config/slurm/cluster.conf
 
 # Claude Code transient state
+.claude/.credentials.json
+.claude/mcp-needs-auth-cache.json
 .claude/settings.local.json
 .claude/backups/
 .claude/cache/

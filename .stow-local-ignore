@@ -4,5 +4,6 @@
 ^/README\.md
 ^/LICENSE
 ^/install\.sh
+^/macos-defaults\.sh
 ^/TOOLS\.md
 ^/CLAUDE\.md

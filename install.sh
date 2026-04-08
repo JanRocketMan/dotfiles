@@ -279,6 +279,13 @@ if [[ -f "$HOME/.mitmproxy/mitmproxy-ca-cert.pem" ]]; then
     fi
 fi
 
+# ── macOS defaults ───────────────────────────────────────────────────────────
+
+if [[ "$OS" == "darwin" ]]; then
+    echo "[..] Applying macOS defaults..."
+    bash "$SCRIPT_DIR/macos-defaults.sh"
+fi
+
 # ── Zsh plugins ───────────────────────────────────────────────────────────────
 
 ZINIT_HOME="${HOME}/.local/share/zinit/zinit.git"
