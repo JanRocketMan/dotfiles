@@ -19,9 +19,10 @@ alias jl='jj log'
 alias jd='jj diff'
 alias js='jj status'
 
-# tmux
-alias ta='tmux a'
-alias tn='tmux new'
+# tmux (stty sane resets terminal after detach — passthrough/extended-keys
+# can leak escape sequences that leave the shell waiting for more input)
+alias ta='tmux a; stty sane'
+alias tn='tmux new; stty sane'
 
 # Python / debugging
 alias dpython='python -m debugpy --wait-for-client --listen'
