@@ -227,6 +227,20 @@ for dir in "${RO_DIRS[@]}"; do
     [[ -d "$dir" ]] && BWRAP_ARGS+=(--ro-bind "$dir" "$dir")
 done
 
+# /etc/resolv.conf is often a symlink into /run/systemd/resolve/ which isn't
+# mounted in the sandbox. Ensure the symlink target path exists so DNS works.
+RESOLV_REAL="$(readlink -f /etc/resolv.conf 2>/dev/null)"
+if [[ -n "$RESOLV_REAL" && -f "$RESOLV_REAL" && "$RESOLV_REAL" != "/etc/resolv.conf" ]]; then
+    parent="$(dirname "$RESOLV_REAL")"
+    acc=""
+    IFS='/' read -ra segs <<< "${parent#/}"
+    for seg in "${segs[@]}"; do
+        acc="$acc/$seg"
+        BWRAP_ARGS+=(--dir "$acc")
+    done
+    BWRAP_ARGS+=(--ro-bind "$RESOLV_REAL" "$RESOLV_REAL")
+fi
+
 # jj is a single binary file, not a directory
 if [[ -f "$HOME_DIR/jj" ]]; then
     BWRAP_ARGS+=(--ro-bind "$HOME_DIR/jj" "$HOME_DIR/jj")
