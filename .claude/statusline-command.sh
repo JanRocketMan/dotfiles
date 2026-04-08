@@ -91,10 +91,10 @@ if [ -n "$ctx_size" ] && [ "$ctx_size" -gt 0 ] 2>/dev/null; then
   total_used=$(( sys_tokens + input_tokens ))
   used_int=$(printf "%.0f" "${used_pct:-0}")
 
-  # Color: green <50%, yellow 50-79%, red >=80%
+  # Color: green <35%, yellow 35-80%, red >=80%
   if [ "$used_int" -ge 80 ]; then
     color="\033[31m"
-  elif [ "$used_int" -ge 50 ]; then
+  elif [ "$used_int" -ge 35 ]; then
     color="\033[33m"
   else
     color="\033[32m"
