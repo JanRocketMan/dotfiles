@@ -1,0 +1,8 @@
+font-size = 24.5
+theme = "Dark+"
+confirm-close-surface = false
+macos-option-as-alt = true
+mouse-hide-while-typing = true
+fullscreen = true
+clipboard-write = allow
+clipboard-read = allow

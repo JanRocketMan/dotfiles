@@ -58,8 +58,11 @@
   typeset -g POWERLEVEL9K_MY_VCS_VISUAL_IDENTIFIER_EXPANSION=
 
   function prompt_my_vcs() {
+    local repo_root
     # Try jj first
-    if command -v jj &>/dev/null && jj root &>/dev/null; then
+    if command -v jj &>/dev/null && repo_root="$(jj root 2>/dev/null)"; then
+      # Skip if repo root is $HOME (stray ~/.jj)
+      [[ "$repo_root" == "$HOME" ]] && return
       local branch
       branch="$(jj log -r @ --no-graph -T 'bookmarks.map(|b| b.name()).join(", ")' 2>/dev/null)"
       if [[ -z "$branch" ]]; then
@@ -70,7 +73,8 @@
       return
     fi
     # Fall back to git
-    if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+    if repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+      [[ "$repo_root" == "$HOME" ]] && return
       local branch
       branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
       [[ -n "$branch" ]] && p10k segment -f default -t "on ${branch}"
