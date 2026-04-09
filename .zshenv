@@ -1,6 +1,11 @@
 # .zshenv — sourced for ALL zsh invocations (login, interactive, scripts)
 # Keep this minimal — only env vars and PATH.
 
+# Skip the system-wide compinit in /etc/zsh/zshrc — it runs an uncached scan
+# of $fpath which is extremely slow on shared/network filesystems (SLURM).
+# Our .zshrc already handles compinit with a 24h cache.
+skip_global_compinit=1
+
 # Cargo/Rust
 [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 

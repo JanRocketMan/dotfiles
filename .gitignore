@@ -27,6 +27,7 @@
 # Zsh generated/local
 .zsh_history
 .zshrc.local
+.zcompdump*
 
 # Generated files
 *.pyc
