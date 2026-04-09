@@ -36,3 +36,6 @@ export PCPCTL_CREDENTIALS_BACKEND="plain"
 # HuggingFace cache
 export HF_HOME="/weka/teams/gte/huggingface/hub"
 export HF_HUB_CACHE="$HF_HOME"
+
+# 1 thread per worker — CPU side is I/O-bound, not compute-bound
+export OMP_NUM_THREADS=1

@@ -64,6 +64,10 @@ setopt APPEND_HISTORY
 
 # ── Key bindings ──────────────────────────────────────────────────────────────
 
+# Zsh auto-detects "vi" in $EDITOR (nvim) and switches to viins mode,
+# which breaks Ctrl+F (forward-char) and other emacs bindings. Force emacs.
+bindkey -e
+
 # (Up/Down for history-substring-search are bound in the plugin's atload above)
 
 # Ctrl+Arrow word navigation
