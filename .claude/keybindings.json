@@ -9,6 +9,7 @@
         "ctrl+x": "chat:cancel",
         "ctrl+f": "chat:killAgents",
         "ctrl+g": "chat:cycleMode",
+        "ctrl+e": "chat:externalEditor",
         "ctrl+q": "chat:snippetPicker"
       }
     },

@@ -1,6 +1,8 @@
 {
   "env": {
-    "CLAUDE_CODE_NO_FLICKER": "1"
+    "CLAUDE_CODE_NO_FLICKER": "1",
+    "EDITOR": "nvim -u ~/.config/nvim/lua/init.lua",
+    "VISUAL": "nvim -u ~/.config/nvim/lua/init.lua"
   },
   "attribution": {
     "commit": "",

@@ -104,4 +104,12 @@ if [ -n "$ctx_size" ] && [ "$ctx_size" -gt 0 ] 2>/dev/null; then
   ctx_segment=" │ ctx ${color}$(fmt_tokens "$total_used")/$(fmt_tokens "$ctx_size")${reset} (${used_int}%)"
 fi
 
-printf "%s%s%s%b" "$model" "$effort_label" "$project_segment" "$ctx_segment"
+# Usage limit segment (5-hour rolling window)
+usg_segment=""
+usg_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+if [ -n "$usg_pct" ]; then
+  usg_int=$(printf "%.0f" "$usg_pct")
+  usg_segment=" │ usg ${usg_int}%"
+fi
+
+printf "%s%s%s%b%s" "$model" "$effort_label" "$project_segment" "$ctx_segment" "$usg_segment"

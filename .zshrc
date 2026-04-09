@@ -101,6 +101,8 @@ fi
 
 # Prevent venv activate from modifying PS1 (p10k handles the prompt)
 export VIRTUAL_ENV_DISABLE_PROMPT=1
+export EDITOR='nvim -u ~/.config/nvim/lua/init.lua'
+export VISUAL='nvim -u ~/.config/nvim/lua/init.lua'
 
 # ── Auto-activate .venv on directory entry ────────────────────────────────────
 

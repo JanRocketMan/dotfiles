@@ -7,6 +7,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 vim.o.cursorline = false
+vim.o.termguicolors = true
 
 -- Disable swap files
 vim.opt.swapfile = false
