@@ -234,6 +234,7 @@ RO_DIRS=(
     "$HOME_DIR/.local/gcc-11"
     "$HOME_DIR/.local/share/uv"
     "$HOME_DIR/.config/uv"
+    "$HOME_DIR/.config/nvim"
     "$HOME_DIR/.config/jj"
     "$HOME_DIR/ripgrep-14.1.0-x86_64-unknown-linux-musl"
     "$HOME_DIR/fd-v10.1.0-x86_64-unknown-linux-musl"
