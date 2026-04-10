@@ -29,6 +29,10 @@
 .zshrc.local
 .zcompdump*
 
+# vifm generated
+.config/vifm/vifminfo.json
+.config/vifm/vifm-help.txt
+
 # Generated files
 *.pyc
 __pycache__/

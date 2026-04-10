@@ -2,7 +2,7 @@
 
 # Claude: sandboxed by default, explicit opt-out
 alias claude='$HOME/.local/bin/claude-sandbox'
-alias claude-unsafe='$HOME/.local/bin/claude --permission-mode default'
+alias claude-unsafe='$HOME/.local/bin/claude'
 
 # Editors
 alias v='nvim'

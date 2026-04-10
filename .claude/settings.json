@@ -143,6 +143,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/skills/remote/post-response.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
