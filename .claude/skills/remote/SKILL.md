@@ -3,7 +3,7 @@ name: remote
 description: Open a bidirectional communication channel with the user via a GitLab issue. Creates a new issue per session for sending updates and receiving instructions remotely.
 argument-hint: "[session description]"
 user-invocable: true
-allowed-tools: "Bash(glab *) Bash(echo *) Bash(export *) Monitor Read"
+allowed-tools: "Bash(glab *) Bash(echo *) Monitor Read Write(/tmp/remote-session.json)"
 ---
 
 # Remote Communication Channel
@@ -27,15 +27,20 @@ Before doing anything, verify it is set by running `echo $GITLAB_REMOTE_PROJECT`
 
        glab issue create -R "$GITLAB_REMOTE_PROJECT" --title "<title>" --description "Remote session. Post comments to send instructions." --no-editor
 
-2. Extract the issue number from the output and export it so the Stop hook can pick it up:
+2. Extract the issue number from the output and write the session file so the Stop hook knows where to post:
 
-       export GITLAB_REMOTE_ISSUE=<issue-number>
+   Write `/tmp/remote-session.json` with:
+   ```json
+   {"project": "<GITLAB_REMOTE_PROJECT value>", "issue": "<issue-number>"}
+   ```
 
 3. Start the comment monitor using the Monitor tool with `persistent: true`:
 
        bash ~/.claude/skills/remote/poll-comments.sh "$GITLAB_REMOTE_PROJECT" <issue-number> 0
 
    This polls every 30s. When the user comments, you receive a notification with `[comment-id] message`. No tokens are consumed while waiting.
+
+That's it. Both directions are now automated.
 
 ## Receiving messages
 
@@ -47,16 +52,16 @@ Your responses are posted automatically by the Stop hook — every time you fini
 
 If you need to send an **extra** message beyond your normal response (e.g., a brief acknowledgement before starting long work), you can still post manually:
 
-    glab issue note "$GITLAB_REMOTE_ISSUE" -R "$GITLAB_REMOTE_PROJECT" -m "[agent] <message>"
+    glab issue note <issue-number> -R "$GITLAB_REMOTE_PROJECT" -m "[agent] <message>"
 
 ## Closing
 
 When the session is done:
 
 1. Stop the monitor using TaskStop.
-2. Unset the env var so the Stop hook deactivates:
+2. Remove the session file so the Stop hook deactivates:
 
-       export GITLAB_REMOTE_ISSUE=
+       rm /tmp/remote-session.json
 
 3. Close the issue:
 

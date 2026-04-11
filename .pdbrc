@@ -3,3 +3,20 @@ import pdb, numpy as np
 pdb.Pdb.do_p=lambda s,a: s.message((lambda v: f"{v.dtype}{v.shape} ∈ ∅" if isinstance(v,np.ndarray) and v.size==0 else (f"{v.dtype}{v.shape} ∈ [{float(np.nanmin(v)):.2e}, {float(np.nanmax(v)):.2e}]" if isinstance(v,np.ndarray) else repr(v)))(s._getval(a)))
 
 if "torch" in sys.modules: setattr(sys.modules["torch"].Tensor, "__repr__", lambda self: f"{str(self.dtype).replace('torch.', '').replace('float32', 'fp32').replace('bfloat16', 'bf16').replace('float16', 'fp16')}{tuple(self.shape)} ∈ [{self.min().float():.2e}, {self.max().float():.2e}] @ {str(self.device)}")
+
+# source: https://treyhunner.com/2026/04/customizing-pdb-with-pdbrc/
+
+# dir obj: print non-dunder attributes and methods
+alias dir print(*(f"%1.{n} = {v!r}" for n, v in __import__('inspect').getmembers(%1) if not n.startswith("__")), sep="\n")
+
+# attrs obj: print non-dunder data attributes
+alias attrs import inspect as __i ;; print(*(f"%1.{n} = {v!r}" for n, v in __i.getmembers(%1, lambda v: not __i.isroutine(v)) if not n.startswith("__")), sep="\n") ;; del __i
+
+# vars obj: print instance variables (object must have __dict__)
+alias vars print(*(f"%1.{k} = {v!r}" for k, v in vars(%1).items()), sep="\n")
+
+# src obj: print source file, line number, and code where a class/function was defined
+alias src import inspect as __i;; print(f"{__i.getsourcefile(%1)} on line {__i.getsourcelines(%1)[1]}:\n{''.join(__i.getsource(%1))}") ;; del __i
+
+# loc: print local variables from current frame
+alias loc print(*(f"{name} = {value!r}" for name, value in vars().items() if not name.startswith("__")), sep="\n")
