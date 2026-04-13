@@ -19,4 +19,4 @@ alias vars print(*(f"%1.{k} = {v!r}" for k, v in vars(%1).items()), sep="\n")
 alias src import inspect as __i;; print(f"{__i.getsourcefile(%1)} on line {__i.getsourcelines(%1)[1]}:\n{''.join(__i.getsource(%1))}") ;; del __i
 
 # loc: print local variables from current frame
-alias loc print(*(f"{name} = {value!r}" for name, value in vars().items() if not name.startswith("__")), sep="\n")
+alias loc print(*(f"{name} = {value!r}" for name, value in vars().items() if not name.startswith("__") and name != "self" and type(value).__name__ != "module"), sep="\n")
