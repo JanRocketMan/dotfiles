@@ -39,3 +39,9 @@ export HF_HUB_CACHE="$HF_HOME"
 
 # 1 thread per worker — CPU side is I/O-bound, not compute-bound
 export OMP_NUM_THREADS=1
+
+# PyTorch cache directories — keep out of /tmp for persistence across SLURM jobs
+export TORCHINDUCTOR_CACHE_DIR="$HOME/.cache/torch_inductor"
+export TRITON_CACHE_DIR="$HOME/.cache/torch_triton"
+export TORCH_EXTENSIONS_DIR="$HOME/.cache/torch_extensions"
+export TORCH_HOME="$HOME/.cache/torch_hub"
