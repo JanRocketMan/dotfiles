@@ -44,6 +44,33 @@ return {{
     "miroshQa/debugmaster.nvim",
     config = function()
       local dm = require("debugmaster")
+      local keys = dm.keys
+
+      -- Remap to pdb-style keys
+      -- First, move displaced keys out of the way
+      keys.get("u").key = "<Tab>"  -- toggle UI (was u, freeing it for stack-up)
+      keys.get("r").key = "<CR>"   -- run to cursor (was r, freeing it for step-out)
+
+      -- Core pdb keys
+      keys.get("o").key = "n"      -- step over  = pdb next
+      keys.get("m").key = "s"      -- step into  = pdb step
+      keys.get("q").key = "r"      -- step out   = pdb return
+      keys.get("t").key = "b"      -- breakpoint = pdb break
+
+      -- Always attach remote, skip config picker
+      keys.get("c").action = function()
+        local dap = require("dap")
+        if dap.session() then
+          dap.continue()
+        else
+          dap.run(dap.configurations.python[1])
+        end
+      end
+
+      -- Stack navigation
+      keys.get("]s").key = "u"     -- up frame   = pdb up
+      keys.get("[s").key = "d"     -- down frame = pdb down
+
       vim.keymap.set({ "n", "v" }, "<leader>m", dm.mode.toggle, { nowait = true, desc = 'Enter debug [m]ode' })
     end
 },

@@ -62,10 +62,11 @@ vim.keymap.set('n', ']e', vim.diagnostic.goto_next, { desc = 'Go to next [e]rror
 -- Basic debugging keymaps
 vim.keymap.set('n', '<leader>b', function() require('dap').toggle_breakpoint() end, { desc = 'Debug: Toggle [B]reakpoint' })
 vim.keymap.set('n', '<F4>', function()
-  require('dap').toggle_breakpoint()
+  local dap = require('dap')
+  dap.toggle_breakpoint()
   require("debugmaster").mode.toggle({nowait=true})
   vim.cmd('lua vim.opt.signcolumn="yes"')
-  require('dap').continue()
+  dap.run(dap.configurations.python[1])
 end, { desc = 'Start debugging' })
 vim.keymap.set('n', '<F5>', function() require('dap').continue() end, { desc = 'Debug: Continue' })
 
