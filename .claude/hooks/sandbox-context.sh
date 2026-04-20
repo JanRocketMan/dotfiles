@@ -13,7 +13,7 @@ You are running inside a bwrap (bubblewrap) sandbox. Respect these constraints:
 - `$HOME` is a tmpfs — only specific directories are bind-mounted in
 - Project directory is read-write
 - `.venv` is read-only — do NOT run `pip install` or modify the venv
-- `.env` / `.env.*` files are masked to `/dev/null` — you cannot read secrets
+- `.env` / `.env.*` files are masked to `/dev/null` — you cannot read secrets (`.example` templates are not masked)
 - System dirs (`/usr`, `/lib`, `/etc`) are read-only
 
 ## SSH & credentials

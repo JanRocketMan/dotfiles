@@ -19,7 +19,7 @@ set -euo pipefail
 #   - Mounts system dirs (/usr, /bin, /lib, /etc) read-only
 #   - Creates an empty tmpfs $HOME, then selectively binds user tools (ro)
 #   - Binds the project directory read-write, with .venv overlaid read-only
-#   - Masks all .env / .env.* files with /dev/null
+#   - Masks .env / .env.* files with /dev/null (except .example templates)
 #   - Exposes SSH agent socket but hides private keys
 #   - Forwards only a curated set of environment variables
 #   - Launches Claude Code in auto permission mode by default
@@ -315,9 +315,9 @@ if [[ -d "$PROJECT_DIR/.venv" ]]; then
     BWRAP_ARGS+=(--ro-bind "$PROJECT_DIR/.venv" "$PROJECT_DIR/.venv")
 fi
 
-# Mask .env files with /dev/null
+# Mask .env files with /dev/null (skip .example templates)
 for envfile in "$PROJECT_DIR/.env" "$PROJECT_DIR"/.env.*; do
-    if [[ -f "$envfile" ]]; then
+    if [[ -f "$envfile" ]] && [[ "$envfile" != *.example ]]; then
         BWRAP_ARGS+=(--ro-bind /dev/null "$envfile")
     fi
 done
