@@ -96,6 +96,53 @@ return {{
     dap.listeners.after.event_exited['pytorch_repr'] = function(session)
       repr_configured[session.id] = nil
     end
+
+    -- Sort variables by recency of modification (most recently changed first)
+    local sort_step = 0
+    local var_last_changed = {}
+    local var_prev_values = {}
+
+    dap.listeners.after.event_stopped['var_sort'] = function()
+      sort_step = sort_step + 1
+    end
+    dap.listeners.after.event_terminated['var_sort'] = function()
+      sort_step = 0
+      var_last_changed = {}
+      var_prev_values = {}
+    end
+    dap.listeners.after.event_exited['var_sort'] = function()
+      sort_step = 0
+      var_last_changed = {}
+      var_prev_values = {}
+    end
+
+    local orig_fetch_children = entity.variable.fetch_children
+    local function sorted_fetch_children(var, cb)
+      orig_fetch_children(var, function(children)
+        local scope_key = tostring(var.variablesReference)
+        for _, child in ipairs(children) do
+          local key = scope_key .. ':' .. child.name
+          if var_prev_values[key] ~= child.value then
+            var_last_changed[key] = sort_step
+          end
+          var_prev_values[key] = child.value
+        end
+        table.sort(children, function(a, b)
+          local a_step = var_last_changed[scope_key .. ':' .. a.name] or 0
+          local b_step = var_last_changed[scope_key .. ':' .. b.name] or 0
+          if a_step ~= b_step then return a_step > b_step end
+          local num_a = string.match(a.name, '^%[?(%d+)%]?$')
+          local num_b = string.match(b.name, '^%[?(%d+)%]?$')
+          if num_a and num_b then return tonumber(num_a) < tonumber(num_b) end
+          return a.name < b.name
+        end)
+        cb(children)
+      end)
+    end
+
+    entity.variable.fetch_children = sorted_fetch_children
+    entity.variable.tree_spec.fetch_children = sorted_fetch_children
+    entity.scope.tree_spec.fetch_children = sorted_fetch_children
   end,
 },
 {
