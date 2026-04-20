@@ -38,6 +38,26 @@ return {{
         end,
       },
     }
+
+    -- Truncate long variable values in scopes/hover panels (~4 wrapped lines in a 30-col panel)
+    local entity = require('dap.entity')
+    local orig_render_child = entity.variable.render_child
+    local max_value_len = 120
+
+    local function truncated_render_child(var, indent)
+      if var.value and #var.value > max_value_len then
+        local saved = var.value
+        var.value = saved:sub(1, max_value_len) .. '…'
+        local text, hl = orig_render_child(var, indent)
+        var.value = saved
+        return text, hl
+      end
+      return orig_render_child(var, indent)
+    end
+
+    entity.variable.render_child = truncated_render_child
+    entity.variable.tree_spec.render_child = truncated_render_child
+    entity.scope.tree_spec.render_child = truncated_render_child
   end,
 },
 {
