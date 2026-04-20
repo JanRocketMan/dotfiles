@@ -39,20 +39,31 @@ return {{
       },
     }
 
-    -- Truncate long variable values in scopes/hover panels (~4 wrapped lines in a 30-col panel)
+    -- Scopes panel: dark brown for variable names, truncate long values
+    vim.api.nvim_set_hl(0, 'DapScopeVariable', { fg = '#96724e' })
+
     local entity = require('dap.entity')
     local orig_render_child = entity.variable.render_child
     local max_value_len = 120
 
     local function truncated_render_child(var, indent)
+      local text, hl
       if var.value and #var.value > max_value_len then
         local saved = var.value
         var.value = saved:sub(1, max_value_len) .. '…'
-        local text, hl = orig_render_child(var, indent)
+        text, hl = orig_render_child(var, indent)
         var.value = saved
-        return text, hl
+      else
+        text, hl = orig_render_child(var, indent)
       end
-      return orig_render_child(var, indent)
+      if hl then
+        for _, region in ipairs(hl) do
+          if region[1] == 'Identifier' then
+            region[1] = 'DapScopeVariable'
+          end
+        end
+      end
+      return text, hl
     end
 
     entity.variable.render_child = truncated_render_child
