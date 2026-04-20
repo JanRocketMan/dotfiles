@@ -132,7 +132,7 @@ if ! grep -q "alias dpython=" ~/.bashrc; then
     echo "alias vim='nvim -u ~/.config/nvim/lua/init.lua'" >> ~/.bashrc
     echo "alias ta='tmux a'" >> ~/.bashrc
     echo "alias tn='tmux new'" >> ~/.bashrc
-    echo "alias dpython='python -m debugpy --wait-for-client --listen'" >> ~/.bashrc
+    echo "alias dpython='PYDEVD_DISABLE_FILE_VALIDATION=1 python -m debugpy --wait-for-client --listen'" >> ~/.bashrc
     echo "alias upi='uv pip install'" >> ~/.bashrc
     echo "alias upu='uv pip uninstall'" >> ~/.bashrc
     echo "✅ Aliases added to ~/.bashrc"

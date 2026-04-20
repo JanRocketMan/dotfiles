@@ -31,7 +31,7 @@ alias ta='tmux a; stty sane'
 alias tn='tmux new; stty sane'
 
 # Python / debugging
-alias dpython='python -m debugpy --wait-for-client --listen'
+alias dpython='PYDEVD_DISABLE_FILE_VALIDATION=1 python -m debugpy --wait-for-client --listen'
 alias rpython='python -u -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=gpu'
 alias upi='uv pip install'
 alias upu='uv pip uninstall'
