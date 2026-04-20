@@ -115,6 +115,15 @@ return {{
         end,
       })
 
+      -- Show picker for all step-in targets (to inspect what's available)
+      keys.add({
+        key = "F",
+        desc = "Step into target (pick from list)",
+        action = function()
+          require("dap").step_into({ askForTargets = true })
+        end,
+      })
+
       vim.keymap.set({ "n", "v" }, "<leader>m", dm.mode.toggle, { nowait = true, desc = 'Enter debug [m]ode' })
     end
 },
