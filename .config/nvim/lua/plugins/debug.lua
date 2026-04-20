@@ -80,7 +80,13 @@ return {{
       repr_configured[session.id] = true
       local frame_id = session.current_frame and session.current_frame.id
       if not frame_id then return end
-      session:request('evaluate', { expression = torch_repr, context = 'repl', frameId = frame_id }, function() end)
+      session:request('evaluate', { expression = torch_repr, context = 'repl', frameId = frame_id }, function(err)
+        if err then
+          print('torch repr: ' .. (err.message or tostring(err)))
+        elseif session.current_frame then
+          session:_request_scopes(session.current_frame)
+        end
+      end)
       session:request('evaluate', { expression = torchvision_si, context = 'repl', frameId = frame_id }, function() end)
     end
 
