@@ -75,7 +75,7 @@ return {{
     local torch_repr = [[import sys; "torch" in sys.modules and setattr(sys.modules["torch"].Tensor, "__repr__", lambda self: f"{str(self.dtype).replace('torch.', '').replace('float32', 'fp32').replace('bfloat16', 'bf16').replace('float16', 'fp16')}{tuple(self.shape)} ∈ [{self.min().float():.2e}, {self.max().float():.2e}] @ {str(self.device)}")]]
     local torchvision_si = [[import sys; si = sys.modules["torchvision.utils"].save_image if "torchvision.utils" in sys.modules else (lambda *a, **k: print("torchvision not available"))]]
 
-    dap.listeners.after.event_stopped['pytorch_repr'] = function(session)
+    dap.listeners.after.scopes['pytorch_repr'] = function(session)
       if repr_configured[session.id] then return end
       repr_configured[session.id] = true
       local frame_id = session.current_frame and session.current_frame.id
