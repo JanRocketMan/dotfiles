@@ -91,6 +91,30 @@ return {{
       keys.get("]s").key = "u"     -- up frame   = pdb up
       keys.get("[s").key = "d"     -- down frame = pdb down
 
+      -- Step into the outermost function call, skipping argument evaluation
+      keys.add({
+        key = "f",
+        desc = "Step into function call (skip arg evaluation)",
+        action = function()
+          local dap = require("dap")
+          local session = dap.session()
+          if not session then return end
+          if not session.capabilities.supportsStepInTargetsRequest then
+            return print("Adapter does not support step-in targets")
+          end
+          local frame = session.current_frame
+          if not frame then return end
+
+          session:request('stepInTargets', { frameId = frame.id }, function(err, resp)
+            if err then return print("stepInTargets: " .. (err.message or "")) end
+            local targets = resp.targets or {}
+            if #targets == 0 then return print("No step-in targets") end
+            -- Last target = outermost call (Python evaluates args before the call)
+            session:_step('stepIn', { targetId = targets[#targets].id })
+          end)
+        end,
+      })
+
       vim.keymap.set({ "n", "v" }, "<leader>m", dm.mode.toggle, { nowait = true, desc = 'Enter debug [m]ode' })
     end
 },
