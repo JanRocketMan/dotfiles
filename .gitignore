@@ -23,6 +23,7 @@
 .claude/tasks/
 .claude/history.jsonl
 .claude/policy-limits.json
+.claude/.nfs*
 
 # Zsh generated/local
 .zsh_history
@@ -32,6 +33,7 @@
 # vifm generated
 .config/vifm/vifminfo.json
 .config/vifm/vifm-help.txt
+.config/vifm/scripts/README
 
 # Generated files
 *.pyc
