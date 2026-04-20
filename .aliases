@@ -1,8 +1,14 @@
 # Shared aliases — sourced by .zshrc (and .bashrc if desired)
 
 # Claude: sandboxed by default, explicit opt-out
-alias claude='$HOME/.local/bin/claude-sandbox'
 alias claude-unsafe='$HOME/.local/bin/claude'
+claude() {
+    if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
+        $HOME/.local/bin/claude-sandbox "$@"
+    else
+        srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty bash -c '"$HOME"/.local/bin/claude-sandbox "$@"' _ "$@"
+    fi
+}
 
 # Editors
 alias v='nvim'

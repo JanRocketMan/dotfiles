@@ -423,7 +423,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     else
         DRY_CMD="claude --permission-mode auto ${CLAUDE_ARGS[*]:-}"
     fi
-    echo "env -i $BWRAP_BIN \\"
+    echo "$BWRAP_BIN --clearenv \\"
     for arg in "${BWRAP_ARGS[@]}"; do
         printf '  %q \\\n' "$arg"
     done
@@ -433,7 +433,7 @@ fi
 
 cd "$PROJECT_DIR"
 if [[ "$USE_SHELL" -eq 1 ]]; then
-    exec env -i "$BWRAP_BIN" "${BWRAP_ARGS[@]}" -- /bin/bash "${CLAUDE_ARGS[@]}"
+    exec "$BWRAP_BIN" --clearenv "${BWRAP_ARGS[@]}" -- /bin/bash "${CLAUDE_ARGS[@]}"
 else
-    exec env -i "$BWRAP_BIN" "${BWRAP_ARGS[@]}" -- claude --permission-mode auto "${CLAUDE_ARGS[@]}"
+    exec "$BWRAP_BIN" --clearenv "${BWRAP_ARGS[@]}" -- claude --permission-mode auto "${CLAUDE_ARGS[@]}"
 fi
