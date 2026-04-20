@@ -69,6 +69,27 @@ return {{
     entity.variable.render_child = truncated_render_child
     entity.variable.tree_spec.render_child = truncated_render_child
     entity.scope.tree_spec.render_child = truncated_render_child
+
+    -- Inject custom torch tensor repr on first breakpoint hit (once per session)
+    local repr_configured = {}
+    local torch_repr = [[import sys; "torch" in sys.modules and setattr(sys.modules["torch"].Tensor, "__repr__", lambda self: f"{str(self.dtype).replace('torch.', '').replace('float32', 'fp32').replace('bfloat16', 'bf16').replace('float16', 'fp16')}{tuple(self.shape)} ∈ [{self.min().float():.2e}, {self.max().float():.2e}] @ {str(self.device)}")]]
+    local torchvision_si = [[import sys; si = sys.modules["torchvision.utils"].save_image if "torchvision.utils" in sys.modules else (lambda *a, **k: print("torchvision not available"))]]
+
+    dap.listeners.after.event_stopped['pytorch_repr'] = function(session)
+      if repr_configured[session.id] then return end
+      repr_configured[session.id] = true
+      local frame_id = session.current_frame and session.current_frame.id
+      if not frame_id then return end
+      session:request('evaluate', { expression = torch_repr, context = 'repl', frameId = frame_id }, function() end)
+      session:request('evaluate', { expression = torchvision_si, context = 'repl', frameId = frame_id }, function() end)
+    end
+
+    dap.listeners.after.event_terminated['pytorch_repr'] = function(session)
+      repr_configured[session.id] = nil
+    end
+    dap.listeners.after.event_exited['pytorch_repr'] = function(session)
+      repr_configured[session.id] = nil
+    end
   end,
 },
 {
