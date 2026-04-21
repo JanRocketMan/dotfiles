@@ -1,6 +1,6 @@
 \.git
 \.jj
-^/README\.md
+README\.md
 ^/LICENSE
 ^/install\.sh
 ^/macos-defaults\.sh
