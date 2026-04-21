@@ -28,11 +28,10 @@ Push the current `.config/nvim` contents from this dotfiles repo to `git@github.
    ```
    cd "$WORK"
    jj git init --colocate
-   jj describe -m "<summary of what changed>"
+   jj describe -m "update"
    jj bookmark set main -r @
    jj git push
    ```
-   Generate the commit message by looking at the diff — use the same style as the dotfiles repo (imperative, lowercase, ~50 chars).
 
 5. **Clean up** the temp directory.
 
