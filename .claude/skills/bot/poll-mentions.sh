@@ -31,6 +31,15 @@ mark_seen() {
     echo "$1" >> "$SEEN_FILE"
 }
 
+# Look up the discussion_id for a note on an MR
+find_discussion_id() {
+    local mr_iid="$1"
+    local note_id="$2"
+    glab api "projects/$ENCODED/merge_requests/$mr_iid/discussions?per_page=100" 2>/dev/null \
+        | jq -r --argjson nid "$note_id" '.[] | select(.notes | any(.id == $nid)) | .id' 2>/dev/null \
+        | head -1
+}
+
 while true; do
     sleep "$INTERVAL"
 
@@ -38,7 +47,7 @@ while true; do
 
     if [ -n "$EVENTS" ] && [ "$EVENTS" != "[]" ]; then
         # Extract matching events as compact JSON (one per line)
-        # noteable_type and noteable_iid are inside .note, not at top level
+        # note_type is "DiscussionNote" for thread replies, null for top-level
         MATCHES=$(echo "$EVENTS" | jq -c --arg bot "$BOTNAME" '
             .[] | select(
                 .note.body != null and
@@ -46,6 +55,8 @@ while true; do
                 (.note.body | startswith("[" + $bot + "]") | not)
             ) | {
                 id: .id,
+                note_id: .note.id,
+                note_type: (.note.type // ""),
                 type: (if .note.noteable_type == "MergeRequest" then "mr" else "issue" end),
                 iid: (.note.noteable_iid // 0),
                 body: (.note.body | split("\n") | first)
@@ -61,8 +72,20 @@ while true; do
                 etype=$(echo "$obj" | jq -r '.type')
                 eiid=$(echo "$obj" | jq -r '.iid')
                 ebody=$(echo "$obj" | jq -r '.body')
+                note_type=$(echo "$obj" | jq -r '.note_type')
+                note_id=$(echo "$obj" | jq -r '.note_id')
 
-                echo "[$etype:$eiid] $ebody"
+                # For MR discussion notes, look up the discussion_id
+                discussion_id=""
+                if [ "$etype" = "mr" ] && [ "$note_type" = "DiscussionNote" ]; then
+                    discussion_id=$(find_discussion_id "$eiid" "$note_id")
+                fi
+
+                if [ -n "$discussion_id" ]; then
+                    echo "[$etype:$eiid:$discussion_id] $ebody"
+                else
+                    echo "[$etype:$eiid] $ebody"
+                fi
             done <<< "$MATCHES"
         fi
     fi

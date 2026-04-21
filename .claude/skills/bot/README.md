@@ -6,20 +6,20 @@ A Claude Code skill that creates a named bot watching a GitLab project for `@men
 
 ```
 You (phone/browser)                    Your machine
-    │                                      │
-    │  @solver review this function        │
-    │  (comment on issue or MR)            │
-    │                                      │
-    └──── GitLab ──── poll-mentions.sh ───►│ Claude Code picks up the mention
-                                           │ via Monitor tool (polls every 10s)
-                                           │
-                                           │ Agent reads context, works on it
-                                           │
-                      post-response.sh ◄───│ Stop hook auto-posts response
-                      (Stop hook)          │ as [solver] comment on the same
-                           │               │ issue/MR
-                           ▼               │
-                        GitLab             │ Agent goes back to listening
+    |                                      |
+    |  @solver review this function        |
+    |  (comment on issue or MR thread)     |
+    |                                      |
+    +---- GitLab ---- poll-mentions.sh --->| Claude Code picks up the mention
+                                           | via Monitor tool (polls every 10s)
+                                           |
+                                           | Agent reads context, works on it
+                                           |
+                      post-response.sh <---| Stop hook auto-posts response
+                      (Stop hook)          | as [solver] comment on the same
+                           |               | issue/MR thread
+                           v               |
+                        GitLab             | Agent goes back to listening
 ```
 
 ## Setup
@@ -70,7 +70,7 @@ Add to `~/.claude/settings.json` under `hooks`:
 This creates a bot named `solver` that:
 - Registers in the project's `active bots` issue (prevents name collisions)
 - Watches for `@solver` mentions across all issues and MRs
-- Responds in-place with `[solver]` prefix
+- Responds in-place with `[solver]` prefix (in the same discussion thread for MRs)
 - Loops back to listening after each response
 
 ## Usage
@@ -83,12 +83,19 @@ Once the bot is running, mention it anywhere in the project:
 @solver is this bug still present on main?
 ```
 
-The bot picks up the mention, fetches context from the issue/MR, works on it, and posts a `[solver]` reply.
+The bot picks up the mention, fetches context from the issue/MR, works on it, and posts a `[solver]` reply. For MR discussion threads, it replies in the same thread.
+
+## Bot name rules
+
+Bot names must contain only alphanumeric characters, hyphens, and underscores. Examples:
+- `solver` — valid
+- `solver_15-2` — valid
+- `solver 15` — invalid (contains space)
 
 ## Multi-user support
 
 - Bot names are unique per project, tracked in an `active bots` issue
-- Session files include the GitLab username: `/tmp/remote-session-<user>-<bot>.json`
+- Session files include the GitLab username (from `glab auth status`): `/tmp/remote-session-<user>-<bot>.json`
 - Multiple users can run different bots on the same project simultaneously
 - The Stop hook matches responses to sessions by `session_id`, preventing cross-talk
 
@@ -97,13 +104,12 @@ The bot picks up the mention, fetches context from the issue/MR, works on it, an
 | File | Purpose |
 |------|---------|
 | `SKILL.md` | Skill definition (instructions for Claude Code) |
-| `poll-mentions.sh` | Polls GitLab Events API for `@botname` mentions |
-| `poll-comments.sh` | Polls issue comments (used by related `/remote` skills) |
-| `post-response.sh` | Stop hook — auto-posts agent responses to GitLab |
+| `poll-mentions.sh` | Polls GitLab Events API for `@botname` mentions, resolves MR discussion threads |
+| `poll-comments.sh` | Polls issue comments (used by related remote skills) |
+| `post-response.sh` | Stop hook — auto-posts agent responses to GitLab issues/MRs/threads |
 
 ## Limitations
 
 - **Polling, not webhooks** — ~10s latency between mention and pickup
-- **Events API gap** — may miss MR discussion thread replies (top-level MR comments and all issue comments work)
 - **Single-threaded** — one mention at a time per bot instance
 - **Bot name characters** — alphanumeric, hyphens, and underscores only

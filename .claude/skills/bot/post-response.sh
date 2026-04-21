@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stop hook: post Claude's last response to a GitLab issue or MR.
 # Finds the session file matching the current session_id.
-# Supports both legacy /remote files and /bot files.
+# For MR discussions, replies in the same thread instead of top-level.
 # No-op if no matching session file exists.
 
 set -euo pipefail
@@ -38,17 +38,24 @@ PROJECT=$(jq -r '.project // empty' "$SESSION_FILE")
 TYPE=$(jq -r '.type // "issue"' "$SESSION_FILE")
 IID=$(jq -r '.iid // .issue // empty' "$SESSION_FILE")
 PREFIX=$(jq -r '.prefix // "[agent]"' "$SESSION_FILE")
+DISCUSSION_ID=$(jq -r '.discussion_id // empty' "$SESSION_FILE")
 [ -z "$IID" ] && exit 0
 
 ENCODED=$(echo "$PROJECT" | sed 's|/|%2F|g')
+BODY="$PREFIX $MESSAGE"
 
 if [ "$TYPE" = "mr" ]; then
-    # Use glab api for MR notes
-    BODY="$PREFIX $MESSAGE"
-    glab api --method POST "projects/$ENCODED/merge_requests/$IID/notes" \
-        -f "body=$BODY" 2>/dev/null || true
+    if [ -n "$DISCUSSION_ID" ]; then
+        # Reply in the same discussion thread
+        glab api --method POST "projects/$ENCODED/merge_requests/$IID/discussions/$DISCUSSION_ID/notes" \
+            -f "body=$BODY" 2>/dev/null || true
+    else
+        # Top-level MR comment
+        glab api --method POST "projects/$ENCODED/merge_requests/$IID/notes" \
+            -f "body=$BODY" 2>/dev/null || true
+    fi
 else
-    glab issue note "$IID" -R "$PROJECT" -m "$PREFIX $MESSAGE" 2>/dev/null || true
+    glab issue note "$IID" -R "$PROJECT" -m "$BODY" 2>/dev/null || true
 fi
 
 echo '{"continue":true}'

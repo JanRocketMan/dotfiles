@@ -51,21 +51,19 @@ Start the mention watcher using the Monitor tool with `persistent: true`:
 
     bash ~/.claude/skills/bot/poll-mentions.sh "$GITLAB_REMOTE_PROJECT" "<botname>"
 
-This polls every 30s. When someone comments `@<botname> ...` on any issue or MR, you receive a notification formatted as:
+This polls every 10s. When someone comments `@<botname> ...` on any issue or MR, you receive a notification formatted as:
 
     [issue:<iid>] comment body
-
-or:
-
     [mr:<iid>] comment body
+    [mr:<iid>:<discussion_id>] comment body
 
-No tokens are consumed while waiting.
+The third form appears when the mention is inside an MR discussion thread. The `discussion_id` is a hex string. No tokens are consumed while waiting.
 
 ## Phase 2: Handle a mention
 
 When a Monitor notification arrives:
 
-1. Parse the type (`issue` or `mr`) and IID from the `[type:iid]` prefix.
+1. Parse the prefix: extract `type` (`issue` or `mr`), `iid`, and optionally `discussion_id` from the `[type:iid:discussion_id]` bracket.
 2. Fetch full context:
    - For issues: `glab issue view <iid> -R "$GITLAB_REMOTE_PROJECT"`
    - For MRs: `glab mr view <iid> -R "$GITLAB_REMOTE_PROJECT"`
@@ -73,12 +71,14 @@ When a Monitor notification arrives:
 
    Write `/tmp/remote-session-<username>-<botname>.json` with:
    ```json
-   {"project": "<GITLAB_REMOTE_PROJECT>", "type": "<issue|mr>", "iid": "<iid>", "prefix": "[<botname>]", "session_id": "<session_id from hook input>"}
+   {"project": "<GITLAB_REMOTE_PROJECT>", "type": "<issue|mr>", "iid": "<iid>", "prefix": "[<botname>]", "session_id": "<session_id>", "discussion_id": "<discussion_id or empty>"}
    ```
+
+   Include `discussion_id` if present in the notification — this makes the Stop hook reply in the same MR thread instead of as a top-level comment. Omit it or set to empty string if not present.
 
    The `session_id` is available as `$CLAUDE_SESSION_ID` or from the session init message.
 
-4. Work on the request described in the comment. The Stop hook will automatically post your response as a `[<botname>]` comment on the same issue/MR.
+4. Work on the request described in the comment. The Stop hook will automatically post your response as a `[<botname>]` comment on the same issue/MR (in the correct thread if `discussion_id` was set).
 
 ## Phase 3: Continue listening
 
