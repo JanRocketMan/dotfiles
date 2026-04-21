@@ -1,68 +1,80 @@
 ---
 name: remote
-description: Open a bidirectional communication channel with the user via a GitLab issue. Creates a new issue per session for sending updates and receiving instructions remotely.
-argument-hint: "[session description]"
+description: Listen for new GitLab issues on the remote project and start working when one is created. Use to put the agent in standby mode awaiting remote instructions.
 user-invocable: true
 allowed-tools: "Bash(glab *) Bash(echo *) Monitor Read Write(/tmp/remote-session.json)"
 ---
 
-# Remote Communication Channel
+# Remote Listener
 
-Open a GitLab issue as a bidirectional communication channel with the user. One issue per session.
+Wait for a new issue to be created on the remote GitLab project, then pick it up and start working.
 
 ## How it works
 
-- **Outbound (you → user):** A global Stop hook automatically posts your last response as a comment on the issue after every turn. You don't need to post comments manually.
-- **Inbound (user → you):** A persistent Monitor polls the issue for new comments and delivers them as notifications. You don't need to poll manually.
+1. Agent starts a Monitor that watches for new issues on `GITLAB_REMOTE_PROJECT`.
+2. Agent does nothing — zero tokens consumed while waiting.
+3. User creates an issue from phone/browser with a title (the task) and optional description (context).
+4. Monitor fires, agent reads the issue, sets up bidirectional comms, and starts working.
 
-## Configuration
+## Prerequisites
 
-Requires the `GITLAB_REMOTE_PROJECT` environment variable — the GitLab project path (e.g., `user/project`).
+- `glab` CLI must be installed and authenticated. Run `glab auth status` to verify. If not installed or not logged in, tell the user and stop.
+- `GITLAB_REMOTE_PROJECT` environment variable must be set — the GitLab project path (e.g., `user/project`). Verify with `echo $GITLAB_REMOTE_PROJECT`. If empty, tell the user and stop.
 
-Before doing anything, verify it is set by running `echo $GITLAB_REMOTE_PROJECT`. If empty, tell the user to export it and stop.
+## Phase 1: Listen for new issues
 
-## Setup (do this once at the start)
+Start the issue watcher using the Monitor tool. This is **not** persistent — it exits after the first new issue:
 
-1. Create a new issue for this session. Use `$ARGUMENTS` as the title context, or summarize the current task if arguments are empty:
+    bash ~/.claude/skills/remote/poll-issues.sh "$GITLAB_REMOTE_PROJECT"
 
-       glab issue create -R "$GITLAB_REMOTE_PROJECT" --title "<title>" --description "Remote session. Post comments to send instructions." --no-editor
+Use `timeout_ms: 3600000` (1 hour). The script polls every 30s.
 
-2. Extract the issue number from the output and write the session file so the Stop hook knows where to post:
+When the Monitor fires, the notification contains: `[issue-iid] title` followed by the description.
+
+If the Monitor times out with no new issue, restart it.
+
+## Phase 2: Set up bidirectional comms
+
+Once a new issue is detected:
+
+1. Parse the issue IID and title from the notification.
+2. Fetch the full issue details if needed:
+
+       glab issue view <iid> -R "$GITLAB_REMOTE_PROJECT"
+
+3. Write the session file so the Stop hook knows where to post:
 
    Write `/tmp/remote-session.json` with:
    ```json
-   {"project": "<GITLAB_REMOTE_PROJECT value>", "issue": "<issue-number>"}
+   {"project": "<GITLAB_REMOTE_PROJECT value>", "issue": "<iid>"}
    ```
 
-3. Start the comment monitor using the Monitor tool with `persistent: true`:
+4. Post an opening `[agent]` comment acknowledging the task.
 
-       bash ~/.claude/skills/remote/poll-comments.sh "$GITLAB_REMOTE_PROJECT" <issue-number> 0
+5. Start the comment monitor using the Monitor tool with `persistent: true`:
 
-   This polls every 30s. When the user comments, you receive a notification with `[comment-id] message`. No tokens are consumed while waiting.
+       bash ~/.claude/skills/remote/poll-comments.sh "$GITLAB_REMOTE_PROJECT" <iid> 0
 
-That's it. Both directions are now automated.
+   This polls every 30s. When the user comments, you receive a notification. No tokens consumed while waiting.
 
-## Receiving messages
+## Phase 3: Work on the task
 
-The Monitor delivers notifications directly into the conversation when the user comments. When you receive a notification, read the message and act on the instructions.
+Read the issue title and description as your instructions. Start working on the task. The communication channel is now fully set up:
 
-## Sending messages
+- **Outbound:** The Stop hook posts your responses automatically.
+- **Inbound:** The comment Monitor delivers user messages as notifications.
 
-Your responses are posted automatically by the Stop hook — every time you finish a response, it gets posted as a `[agent]` comment on the issue. You do not need to run `glab issue note` yourself.
-
-If you need to send an **extra** message beyond your normal response (e.g., a brief acknowledgement before starting long work), you can still post manually:
-
-    glab issue note <issue-number> -R "$GITLAB_REMOTE_PROJECT" -m "[agent] <message>"
+When you receive a comment notification, read and act on the instructions.
 
 ## Closing
 
 When the session is done:
 
-1. Stop the monitor using TaskStop.
-2. Remove the session file so the Stop hook deactivates:
+1. Stop the comment monitor using TaskStop.
+2. Remove the session file:
 
        rm /tmp/remote-session.json
 
 3. Close the issue:
 
-       glab issue close <issue-number> -R "$GITLAB_REMOTE_PROJECT"
+       glab issue close <iid> -R "$GITLAB_REMOTE_PROJECT"
