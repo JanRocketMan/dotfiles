@@ -160,8 +160,6 @@ return {{
       keys.get("o").key = "n"      -- step over  = pdb next
       keys.get("m").key = "s"      -- step into  = pdb step
       keys.get("q").key = "r"      -- step out   = pdb return
-      keys.get("t").key = "<leader>b" -- breakpoint (free up b for normal motion)
-
       -- Always attach remote, skip config picker
       keys.get("c").action = function()
         local dap = require("dap")
