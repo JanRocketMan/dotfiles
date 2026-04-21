@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Poll a GitLab issue for new non-agent comments, emitting each as a stdout line.
 # Designed for use with Claude Code's Monitor tool (persistent mode).
-# Usage: poll-comments.sh <project> <issue> <last-seen-id> [poll-interval]
+# Usage: poll-comments.sh <project> <issue> <last-seen-id> [prefix] [poll-interval]
 
 set -euo pipefail
 
 PROJECT="$1"
 ISSUE="$2"
 LAST_ID="${3:-0}"
-INTERVAL="${4:-30}"
+PREFIX="${4:-[agent]}"
+INTERVAL="${5:-30}"
 
 ENCODED=$(echo "$PROJECT" | sed 's|/|%2F|g')
 
@@ -17,8 +18,8 @@ while true; do
 
     if [ -n "$RESPONSE" ]; then
         COMMENTS=$(echo "$RESPONSE" \
-            | jq -r --argjson last "$LAST_ID" \
-              '.[] | select(.system == false and (.id > $last) and (.body | startswith("[agent]") | not)) | "[\(.id)] \(.body)"')
+            | jq -r --argjson last "$LAST_ID" --arg pfx "$PREFIX" \
+              '.[] | select(.system == false and (.id > $last) and (.body | startswith($pfx) | not)) | "[\(.id)] \(.body)"')
 
         if [ -n "$COMMENTS" ]; then
             echo "$COMMENTS"

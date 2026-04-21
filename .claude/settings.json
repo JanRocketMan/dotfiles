@@ -150,7 +150,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $HOME/.claude/skills/remote/post-response.sh"
+            "command": "bash $HOME/.claude/skills/bot/post-response.sh"
           }
         ]
       }
