@@ -24,20 +24,24 @@ Push the current `.config/nvim` contents from this dotfiles repo to `git@github.
 
 3. **Check for changes** — if `git status` in `$WORK` shows nothing, report "already up to date" and clean up.
 
-4. **Commit and push**:
+4. **Get git identity** from the dotfiles repo (do NOT hardcode name/email):
    ```
-   cd "$WORK"
-   jj git init --colocate
-   jj describe -m "update"
-   jj bookmark set main -r @
-   jj git push
+   NAME=$(cd <dotfiles> && jj config get user.name)
+   EMAIL=$(cd <dotfiles> && jj config get user.email)
    ```
 
-5. **Clean up** the temp directory.
+5. **Commit and push** using bare git (jj cannot write its config in temp dirs):
+   ```
+   cd "$WORK"
+   git -c user.name="$NAME" -c user.email="$EMAIL" commit -a -m "update"
+   git push
+   ```
+
+6. **Clean up** the temp directory.
 
 ## Conflict handling
 
-If `jj git push` fails due to conflicts (remote has commits not in the clone), **STOP** and report the error to the user. Do not force-push or rebase without asking.
+If `git push` fails due to conflicts (remote has commits not in the clone), **STOP** and report the error to the user. Do not force-push or rebase without asking.
 
 ## What to exclude
 
