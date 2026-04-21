@@ -283,6 +283,12 @@ if [[ -f "$HOME_DIR/.claude.json" ]]; then
     BWRAP_ARGS+=(--bind "$HOME_DIR/.claude.json" "$HOME_DIR/.claude.json")
 fi
 
+# Dotfiles repo (read-only) — stow symlinks in ~/.claude point here
+DOTFILES_DIR="$HOME_DIR/dotfiles"
+if [[ -d "$DOTFILES_DIR" && "$(realpath "$DOTFILES_DIR")" != "$(realpath "$PROJECT_DIR")" ]]; then
+    BWRAP_ARGS+=(--ro-bind "$DOTFILES_DIR" "$DOTFILES_DIR")
+fi
+
 # Cache directory (read-write, persistent across sessions)
 mkdir -p "$HOME_DIR/.cache"
 BWRAP_ARGS+=(--bind "$HOME_DIR/.cache" "$HOME_DIR/.cache")

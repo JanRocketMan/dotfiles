@@ -40,8 +40,9 @@ If a tool is compromised or needs a version bump, edit this table. No other file
 | jj | 0.28.2 | linux-aarch64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-aarch64-unknown-linux-musl.tar.gz` | `jj` | tarball |
 | jj | 0.28.2 | darwin-x86_64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-x86_64-apple-darwin.tar.gz` | `jj` | tarball |
 | jj | 0.28.2 | darwin-aarch64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-aarch64-apple-darwin.tar.gz` | `jj` | tarball |
+| zsh | 5.8 | linux-all | `apt:zsh` | `-` | deb |
 | uv | latest | all | `https://astral.sh/uv/install.sh` | `-` | script |
 | claude | latest | all | `npm:@anthropic-ai/claude-code` | `-` | npm |
-| bwrap | 0.4.0 | linux-all | `apt:bubblewrap` | `-` | deb |
+| bwrap | 0.9.0 | linux-all | `https://github.com/containers/bubblewrap/releases/download/v0.9.0/bubblewrap-0.9.0.tar.xz` | `bwrap` | source |
 | mitmproxy | latest | all | `uv-tool:mitmproxy` | `-` | uv-tool |
 | zinit | latest | all | `https://github.com/zdharma-continuum/zinit.git` | `-` | git |

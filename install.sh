@@ -131,6 +131,30 @@ install_tarball fd
 install_tarball fzf
 install_binary jq
 
+# ── Shell ─────────────────────────────────────────────────────────────────────
+
+# zsh: extract from system .deb so it's available on compute nodes via shared $HOME
+if [[ -x "$HOME/.local/bin/zsh" ]]; then
+    echo "[ok] zsh (local) already installed: $("$HOME/.local/bin/zsh" --version 2>&1)"
+else
+    echo "[..] Installing zsh (local copy)..."
+    tmpdir="$(mktemp -d)"
+    (
+        cd "$tmpdir"
+        apt download zsh zsh-common 2>/dev/null
+        mkdir extract
+        for f in *.deb; do dpkg -x "$f" extract; done
+        cp extract/bin/zsh "$HOME/.local/bin/zsh"
+        chmod +x "$HOME/.local/bin/zsh"
+        # modules (.so files) and functions needed on compute nodes
+        rm -rf "$HOME/.local/lib/zsh" "$HOME/.local/share/zsh"
+        cp -r extract/usr/lib/x86_64-linux-gnu/zsh "$HOME/.local/lib/zsh"
+        cp -r extract/usr/share/zsh "$HOME/.local/share/zsh"
+    )
+    rm -rf "$tmpdir"
+    echo "[ok] zsh (local) installed: $("$HOME/.local/bin/zsh" --version 2>&1)"
+fi
+
 # ── Editors & file managers ───────────────────────────────────────────────────
 
 # Neovim: tarball-tree (directory with bin/, lib/, share/)
@@ -218,24 +242,45 @@ fi
 
 # bubblewrap (Linux only, from .deb)
 method="$(manifest_get bwrap method)"
-if [[ "$method" == "deb" ]]; then
+if [[ "$method" == "source" ]]; then
     if command -v bwrap &>/dev/null; then
         echo "[ok] bwrap already installed: $(bwrap --version)"
     else
-        pkg="$(manifest_get bwrap url)"
-        pkg="${pkg#apt:}"  # strip apt: prefix
-        echo "[..] Installing bwrap from .deb..."
-        tmpdir="$(mktemp -d)"
-        (
-            cd "$tmpdir"
-            apt download "$pkg" 2>/dev/null
-            mkdir extract
-            dpkg -x "${pkg}"_*.deb extract
-            cp extract/usr/bin/bwrap "$HOME/.local/bin/bwrap"
-            chmod +x "$HOME/.local/bin/bwrap"
-        )
-        rm -rf "$tmpdir"
-        echo "[ok] bwrap installed: $(bwrap --version)"
+        url="$(manifest_get bwrap url)"
+        echo "[..] Building bwrap from source..."
+        for dep in meson ninja pkg-config; do
+            if ! command -v "$dep" &>/dev/null; then
+                echo "[skip] bwrap: missing build dependency '$dep'" >&2
+                echo "       install with: uv tool install $dep" >&2
+                url=""
+                break
+            fi
+        done
+        if [[ -n "$url" ]]; then
+            tmpdir="$(mktemp -d)"
+            (
+                cd "$tmpdir"
+                # fetch libcap-dev headers if not installed
+                if ! pkg-config --exists libcap 2>/dev/null; then
+                    apt download libcap-dev 2>/dev/null
+                    mkdir -p libcap-staging
+                    dpkg -x libcap-dev_*.deb libcap-staging
+                    local_prefix="$tmpdir/libcap-staging/usr"
+                    export PKG_CONFIG_PATH="$local_prefix/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+                    export CFLAGS="-I$local_prefix/include"
+                    export LDFLAGS="-L$local_prefix/lib/x86_64-linux-gnu"
+                fi
+                wget -q "$url" -O src.tar.xz
+                tar xf src.tar.xz
+                cd bubblewrap-*/
+                meson setup _build -Dselinux=disabled -Dtests=false 2>&1 | tail -1
+                ninja -C _build 2>&1 | tail -1
+                cp _build/bwrap "$HOME/.local/bin/bwrap"
+                chmod +x "$HOME/.local/bin/bwrap"
+            )
+            rm -rf "$tmpdir"
+            echo "[ok] bwrap installed: $(bwrap --version)"
+        fi
     fi
 else
     echo "[skip] bwrap: Linux only (macOS uses sandbox-exec)"
@@ -353,7 +398,7 @@ echo ""
 echo "=== Done ==="
 echo ""
 echo "Installed tools:"
-for cmd in rg fd fzf jq nvim vifm jj uv claude bwrap mitmdump; do
+for cmd in rg fd fzf jq zsh nvim vifm jj uv claude bwrap mitmdump; do
     if command -v "$cmd" &>/dev/null; then
         ver="$(timeout 5 "$cmd" --version 2>&1 | head -1)" || ver="(installed)"
         printf "  %-12s %s\n" "$cmd" "$ver"

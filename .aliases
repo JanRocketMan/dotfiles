@@ -117,6 +117,12 @@ slaunch() {
         bash)
             srun_tail=(--pty /bin/bash -i)
             ;;
+        zsh)
+            srun_tail=(--pty "$HOME/.local/bin/zsh" -i)
+            ;;
+        claude)
+            srun_tail=(--pty "$HOME/.local/bin/claude-sandbox" "$@")
+            ;;
         python)
             if [[ "$nodes" -gt 1 ]]; then
                 srun_tail=(python -u -m torch.distributed.run \
