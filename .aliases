@@ -1,5 +1,8 @@
 # Shared aliases — sourced by .zshrc (and .bashrc if desired)
 
+# Nanobox
+alias nbox='$HOME/nanobox/nbox'
+
 # Claude: sandboxed via nanobox by default, explicit opt-out
 alias claude-unsafe='command claude'
 claude() {
