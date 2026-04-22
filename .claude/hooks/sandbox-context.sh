@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Injected via SessionStart hook when running inside claude-sandbox.
-# Silent (no output) when CLAUDE_SANDBOX is unset (claude-unsafe / bare claude).
+# Injected via SessionStart hook when running inside nanobox.
+# Silent (no output) when NBOX is unset (claude-unsafe / bare claude).
 
-[[ "${CLAUDE_SANDBOX:-}" != "1" ]] && exit 0
+[[ "${NBOX:-}" != "1" ]] && exit 0
 
 cat <<'EOF'
 # Sandbox Environment

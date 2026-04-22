@@ -51,19 +51,13 @@ First launch installs plugins automatically. Run `p10k configure` to set up prom
 
 [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) config (git submodule). Uses lazy.nvim — plugins install automatically on first launch.
 
-### `.local/bin/claude-sandbox` — Bubblewrap sandbox for Claude Code
+### Sandbox — [nanobox](https://github.com/JanRocketMan/nanobox)
 
-Confines Claude Code to a minimal filesystem view using Linux user namespaces — no root required.
-
-- SSH private keys invisible (auth via ssh-agent socket)
-- `.env` files masked to `/dev/null`
-- Environment wiped clean (`env -i`), only essential vars forwarded
-- `.venv` read-only, project dir read-write
-- GPU auto-detected: NVIDIA devices, `/sys`, `/dev/shm`, CUDA env vars
-- Credential-injection proxy auto-detected via `credentials.json`
+Claude runs inside a [nanobox](https://github.com/JanRocketMan/nanobox) sandbox by default (via the `claude` alias). Nanobox is an agent-agnostic bwrap+mitmproxy tool that confines any command to a minimal filesystem view — no root required.
 
 ```bash
-claude ~/myproject              # sandboxed (alias for claude-sandbox)
+claude                          # sandboxed via nanobox (alias)
+claude --resume                 # args pass through transparently
 claude-unsafe                   # unsandboxed, plan permission mode
 ```
 
@@ -72,11 +66,9 @@ claude-unsafe                   # unsandboxed, plan permission mode
 - `vifmrc` — config (codeyellow colorscheme)
 - `colors/codeyellow.vifm` — symlink to nvim's copy (shared theme)
 
-### `.config/proxy-creds/` — Credential injection proxy
+### Credential injection proxy
 
-- `inject_credentials.py` — mitmproxy addon for header injection
-- `credentials.template.json` — template with `${ENV_VAR}` placeholders
-- `proxy-creds-gen` (in `~/.local/bin/`) — generates `credentials.json` from env vars
+Managed by [nanobox](https://github.com/JanRocketMan/nanobox). Run `nbox proxy` to edit the credentials template, `nbox resolve` to generate `credentials.json` from env vars. The proxy auto-starts when launching sandboxed commands.
 
 ### `.config/slurm/` — SLURM cluster config
 

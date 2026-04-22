@@ -1,5 +1,5 @@
 # Real credentials (never commit)
-.config/proxy-creds/credentials.json
+.config/nanobox/credentials.json
 
 # Machine-specific cluster config
 .config/slurm/cluster.conf
