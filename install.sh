@@ -148,6 +148,7 @@ else
         chmod +x "$HOME/.local/bin/zsh"
         # modules (.so files) and functions needed on compute nodes
         rm -rf "$HOME/.local/lib/zsh" "$HOME/.local/share/zsh"
+        mkdir -p "$HOME/.local/lib" "$HOME/.local/share"
         cp -r extract/usr/lib/x86_64-linux-gnu/zsh "$HOME/.local/lib/zsh"
         cp -r extract/usr/share/zsh "$HOME/.local/share/zsh"
     )
@@ -358,7 +359,7 @@ if [[ -d "$NANOBOX_DIR" ]]; then
     echo "[ok] nanobox already cloned: $NANOBOX_DIR"
 else
     echo "[..] Cloning nanobox..."
-    git clone git@github.com:JanRocketMan/nanobox.git "$NANOBOX_DIR"
+    git clone https://github.com/JanRocketMan/nanobox.git "$NANOBOX_DIR"
     echo "[ok] nanobox cloned"
 fi
 
