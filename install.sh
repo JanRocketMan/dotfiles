@@ -383,12 +383,12 @@ fi
 
 ZSH_PATH="$(command -v zsh 2>/dev/null || true)"
 if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
-    if chsh -s "$ZSH_PATH" 2>/dev/null; then
+    if timeout 5 chsh -s "$ZSH_PATH" </dev/null 2>/dev/null; then
         echo "[ok] Default shell set to $ZSH_PATH"
     else
         PROFILE="$HOME/.bash_profile"
-        EXEC_LINE="[[ -x $ZSH_PATH && -z \$ZSH_VERSION ]] && exec $ZSH_PATH -l"
-        if ! grep -qF "exec $ZSH_PATH" "$PROFILE" 2>/dev/null; then
+        EXEC_LINE='[[ -x "$HOME/.local/bin/zsh" && -z $ZSH_VERSION ]] && exec "$HOME/.local/bin/zsh" -l'
+        if ! grep -qF 'exec "$HOME/.local/bin/zsh"' "$PROFILE" 2>/dev/null; then
             echo "" >> "$PROFILE"
             echo "# Auto-switch to zsh on login (no sudo for chsh)" >> "$PROFILE"
             echo "$EXEC_LINE" >> "$PROFILE"

@@ -8,3 +8,6 @@ if [[ -x /usr/bin/zsh && -z $ZSH_VERSION ]]; then
         exec /usr/bin/zsh -l
     fi
 fi
+
+# Auto-switch to zsh on login (no sudo for chsh)
+[[ -x "$HOME/.local/bin/zsh" && -z $ZSH_VERSION ]] && exec "$HOME/.local/bin/zsh" -l
