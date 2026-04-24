@@ -10,5 +10,11 @@ description: GitLab conventions — glab CLI, merge requests, semantic release. 
 
 ## Merge Requests & Commits
 
-- Projects use **semantic release** — the MR title must use conventional commit prefixes (`feat:`, `fix:`, `chore:`, etc.) so the release bot can determine version bumps.
-- **Individual commit messages should NOT use conventional commit prefixes** (`feat:`, `fix:`, `test:`, etc.). Only the MR title needs them. Keep commit messages plain and descriptive.
+**CRITICAL: All MR titles MUST follow conventional commit format.** Semantic release parses MR titles to determine version bumps - a missing or wrong prefix breaks automated releases.
+
+- `feat: ...` - new feature or behavior change (triggers minor bump)
+- `fix: ...` - bug fix (triggers patch bump)
+- `chore: ...` / `ci: ...` / `docs: ...` - no release triggered
+- `feat!: ...` / `fix!: ...` - breaking change (triggers major bump)
+
+Individual commit messages do NOT use conventional prefixes - only the MR title.

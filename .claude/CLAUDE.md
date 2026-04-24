@@ -7,6 +7,10 @@ Always use Jujutsu (`jj`) colocated with Git. Never run bare `git` commands.
 - Ensure colocation: if only `.git/` exists → `jj git init --colocate`; if only `.jj/` (non-colocated) → ask before converting
 - Remote operations: `jj git push`, `jj git fetch`
 
+## Writing style
+
+- Never use em dashes (`—`); use regular dashes (`-`) instead
+
 ## Commits
 
 - No conventional commit prefixes going forward (no `fix:`, `feat:`, `refactor:`, etc.)
