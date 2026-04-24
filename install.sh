@@ -208,6 +208,7 @@ fi
 # ── VCS ───────────────────────────────────────────────────────────────────────
 
 install_tarball jj
+install_tarball glab
 
 # ── Python tooling ────────────────────────────────────────────────────────────
 
@@ -410,7 +411,7 @@ echo ""
 echo "=== Done ==="
 echo ""
 echo "Installed tools:"
-for cmd in rg fd fzf jq zsh nvim vifm jj uv claude bwrap mitmdump; do
+for cmd in rg fd fzf jq zsh nvim vifm jj glab uv claude bwrap mitmdump; do
     if command -v "$cmd" &>/dev/null; then
         ver="$(timeout 5 "$cmd" --version 2>&1 | head -1)" || ver="(installed)"
         printf "  %-12s %s\n" "$cmd" "$ver"

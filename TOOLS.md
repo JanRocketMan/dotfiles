@@ -36,6 +36,10 @@ If a tool is compromised or needs a version bump, edit this table. No other file
 | vifm | 0.14 | linux-x86_64 | `https://github.com/vifm/vifm/releases/download/v0.14/vifm-v0.14-x86_64.AppImage` | `-` | appimage |
 | vifm | 0.14 | linux-aarch64 | `-` | `-` | brew |
 | vifm | 0.14 | darwin-all | `-` | `-` | brew |
+| glab | 1.93.0 | linux-x86_64 | `https://gitlab.com/gitlab-org/cli/-/releases/v1.93.0/downloads/glab_1.93.0_linux_amd64.tar.gz` | `bin/glab` | tarball |
+| glab | 1.93.0 | linux-aarch64 | `https://gitlab.com/gitlab-org/cli/-/releases/v1.93.0/downloads/glab_1.93.0_linux_arm64.tar.gz` | `bin/glab` | tarball |
+| glab | 1.93.0 | darwin-x86_64 | `https://gitlab.com/gitlab-org/cli/-/releases/v1.93.0/downloads/glab_1.93.0_darwin_amd64.tar.gz` | `bin/glab` | tarball |
+| glab | 1.93.0 | darwin-aarch64 | `https://gitlab.com/gitlab-org/cli/-/releases/v1.93.0/downloads/glab_1.93.0_darwin_arm64.tar.gz` | `bin/glab` | tarball |
 | jj | 0.28.2 | linux-x86_64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-x86_64-unknown-linux-musl.tar.gz` | `jj` | tarball |
 | jj | 0.28.2 | linux-aarch64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-aarch64-unknown-linux-musl.tar.gz` | `jj` | tarball |
 | jj | 0.28.2 | darwin-x86_64 | `https://github.com/jj-vcs/jj/releases/download/v0.28.2/jj-v0.28.2-x86_64-apple-darwin.tar.gz` | `jj` | tarball |

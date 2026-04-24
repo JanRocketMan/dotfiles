@@ -104,6 +104,26 @@ if [ -n "$ctx_size" ] && [ "$ctx_size" -gt 0 ] 2>/dev/null; then
   ctx_segment=" │ ctx ${color}$(fmt_tokens "$total_used")/$(fmt_tokens "$ctx_size")${reset} (${used_int}%)"
 fi
 
+# Speed segment (per-request output tokens/sec via delta tracking)
+speed_segment=""
+session_id=$(echo "$input" | jq -r '.session_id // empty')
+api_duration_ms=$(echo "$input" | jq -r '.cost.total_api_duration_ms // 0')
+output_tokens=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
+if [ -n "$session_id" ] && [ "$api_duration_ms" -gt 0 ] 2>/dev/null && [ "$output_tokens" -gt 0 ] 2>/dev/null; then
+  state_file="/tmp/claude-statusline-${session_id}"
+  prev_tokens=0 prev_duration=0
+  if [ -f "$state_file" ]; then
+    read -r prev_tokens prev_duration < "$state_file" 2>/dev/null || true
+  fi
+  echo "$output_tokens $api_duration_ms" > "$state_file"
+  delta_tokens=$(( output_tokens - prev_tokens ))
+  delta_ms=$(( api_duration_ms - prev_duration ))
+  if [ "$delta_ms" -gt 0 ] && [ "$delta_tokens" -gt 0 ]; then
+    tps=$(echo "$delta_tokens * 1000 / $delta_ms" | bc -l)
+    speed_segment=" │ $(printf "%.0f" "$tps") tok/s"
+  fi
+fi
+
 # Usage limit segment (5-hour rolling window)
 usg_segment=""
 usg_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
@@ -112,4 +132,4 @@ if [ -n "$usg_pct" ]; then
   usg_segment=" │ usg ${usg_int}%"
 fi
 
-printf "%s%s%s%b%s" "$model" "$effort_label" "$project_segment" "$ctx_segment" "$usg_segment"
+printf "%s%s%s%b%s%s" "$model" "$effort_label" "$project_segment" "$ctx_segment" "$speed_segment" "$usg_segment"
