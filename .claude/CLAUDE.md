@@ -44,5 +44,9 @@ Always use `uv` for Python project management instead of pip, venv, conda, poetr
 - Paths: always `pathlib.Path`, never `os.path`
 - Strings: f-strings for all interpolation
 - Docstrings: Google style (`Args:`, `Returns:`, `Raises:`); skip for trivial code
-- Imports: stdlib → third-party → local; prefer relative imports within packages
+- Imports (PEP 8, PEP 328):
+  - All imports at the top of the file, never inside functions or local scopes
+  - Order: stdlib → third-party → local; prefer relative imports within packages
+  - Never use wildcard imports (`from lib import *`) - always import specific names (PEP 8)
+  - Use `ruff check --select I --fix` (isort) to sort and format imports
 
