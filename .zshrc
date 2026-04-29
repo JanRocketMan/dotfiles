@@ -10,6 +10,13 @@ if [[ -f "$HOME/.bashrc" ]]; then
     ZSH_SOURCING_BASHRC=1 emulate sh -c 'source "$HOME/.bashrc"' 2>/dev/null
 fi
 
+# ── Environment Modules (for SLURM, CUDA, etc.) ─────────────────────────────
+
+if [[ -f /cm/local/apps/environment-modules/current/init/zsh ]]; then
+    source /cm/local/apps/environment-modules/current/init/zsh
+    module load slurm
+fi
+
 # ── Zinit plugin manager ──────────────────────────────────────────────────────
 
 ZINIT_HOME="${HOME}/.local/share/zinit/zinit.git"

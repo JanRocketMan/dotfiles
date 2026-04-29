@@ -334,7 +334,19 @@ vim.keymap.set('n', '<leader>to', function()
 end, {desc = "[To]ggle diagnostic messages and signs"})
 
 -- Apply minimal mode settings
-vim.cmd('syntax off | highlight Normal guibg=#1e1e1e guifg=#b8a583')
+vim.cmd('highlight Normal guibg=#1e1e1e guifg=#b8a583')
+vim.cmd('highlight Comment guifg=#ddd2b8')
+vim.cmd('highlight! link SpecialComment Comment')
+vim.cmd('highlight! link String Comment')
+for _, g in ipairs({
+  'Constant', 'Character', 'Number', 'Boolean', 'Float',
+  'Identifier', 'Function', 'Statement', 'Conditional', 'Repeat', 'Label',
+  'Operator', 'Keyword', 'Exception', 'PreProc', 'Include', 'Define', 'Macro',
+  'PreCondit', 'Type', 'StorageClass', 'Structure', 'Typedef', 'Special',
+  'SpecialChar', 'Tag', 'Delimiter', 'Debug', 'Underlined', 'Error', 'Todo',
+}) do
+  vim.cmd('hi! link ' .. g .. ' Normal')
+end
 local minimal_group = vim.api.nvim_create_augroup("MinimalMode", { clear = true })
 function recent_files_picker()
   vim.cmd("normal! '0")
