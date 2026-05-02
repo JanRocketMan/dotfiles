@@ -31,8 +31,15 @@ alias js='jj status'
 
 # tmux (stty sane resets terminal after detach — passthrough/extended-keys
 # can leak escape sequences that leave the shell waiting for more input)
-alias ta='tmux a; stty sane'
+alias tl='tmux ls 2>/dev/null || echo "no sessions"'
 alias tn='tmux new; stty sane'
+ta() {
+    if [[ -n "$1" ]]; then
+        tmux attach -t "$1"; stty sane
+    else
+        tmux attach -t 0; stty sane
+    fi
+}
 
 # Python / debugging
 alias dpython='PYDEVD_DISABLE_FILE_VALIDATION=1 python -m debugpy --wait-for-client --listen'

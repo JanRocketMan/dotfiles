@@ -37,7 +37,18 @@ zinit light romkatv/powerlevel10k
 # ── Fish-like plugins (turbo-loaded: deferred until after first prompt) ───────
 
 # Inline grey suggestions from history (accept with →)
-zinit ice wait lucid
+# atload: Tab accepts autosuggestion when visible, otherwise does normal completion
+zinit ice wait lucid atload'
+_fish_tab() {
+    if [[ -n "$POSTDISPLAY" ]]; then
+        zle autosuggest-accept
+    else
+        zle expand-or-complete
+    fi
+}
+zle -N _fish_tab
+bindkey "\t" _fish_tab
+'
 zinit light zsh-users/zsh-autosuggestions
 
 # Fish-like history substring search (type partial command, press ↑/↓)
@@ -77,6 +88,23 @@ bindkey -e
 
 # (Up/Down for history-substring-search are bound in the plugin's atload above)
 
+# Fish-like word deletion:
+#   Ctrl+W        = delete path component (stop at / : @ etc.)
+#   Alt+Backspace = delete big WORD (back to whitespace)
+backward-kill-path-component() {
+    local WORDCHARS='_-.~!^'
+    zle backward-kill-word
+}
+zle -N backward-kill-path-component
+bindkey '^W' backward-kill-path-component
+
+backward-kill-WORD() {
+    local WORDCHARS='*?_-.[]~=/&;!#$%^(){}<>:@,^'
+    zle backward-kill-word
+}
+zle -N backward-kill-WORD
+bindkey '^[^?' backward-kill-WORD
+
 # Ctrl+Arrow word navigation
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
@@ -92,7 +120,6 @@ bindkey '^[[3~' delete-char
 
 # ── Completion ────────────────────────────────────────────────────────────────
 
-# Rebuild .zcompdump at most once a day; otherwise load cached
 autoload -Uz compinit
 if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
     compinit
@@ -101,6 +128,7 @@ else
 fi
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' menu select
+zstyle ':completion:*:descriptions' format ''
 
 # ── fzf integration ───────────────────────────────────────────────────────────
 
