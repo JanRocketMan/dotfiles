@@ -20,12 +20,14 @@ claude() {
                 ;;
         esac
     done
+    [[ -n "$TMUX" ]] && tmux rename-window "cl@${PWD##*/}"
     if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
         "$HOME/nanobox/nbox" run "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
     else
         srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
             bash -c '"$HOME"/nanobox/nbox run "$@"' _ "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
     fi
+    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
 }
 
 # Editors
@@ -184,8 +186,10 @@ slaunch() {
         srun_args+=(--exclude="$exclude")
     fi
 
+    [[ "$command" == "claude" && -n "$TMUX" ]] && tmux rename-window "cl@${PWD##*/}"
     echo "+ ${srun_args[*]} ${srun_tail[*]}" >&2
     "${srun_args[@]}" "${srun_tail[@]}"
+    [[ "$command" == "claude" && -n "$TMUX" ]] && tmux set-window-option automatic-rename on
 }
 
 # SLURM aliases (only defined if srun is available)
@@ -218,3 +222,9 @@ frp() {
 }
 # fp PORT HOST — create SSH port forward
 fp() { ssh -fN -L "$1":localhost:"$1" "$2"; }
+
+# Perfetto - start UI server (run once, keep in background/tmux)
+alias perf_ui='$HOME/perfetto/serve-ui.sh'
+# Perfetto - open a trace file (works from any directory)
+alias perf='$HOME/perfetto/open-trace.sh'
+
