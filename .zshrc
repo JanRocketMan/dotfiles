@@ -105,6 +105,9 @@ backward-kill-WORD() {
 zle -N backward-kill-WORD
 bindkey '^[^?' backward-kill-WORD
 
+# Ctrl+U kills backward from cursor, not the whole line
+bindkey '^U' backward-kill-line
+
 # Ctrl+Arrow word navigation
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
