@@ -6,6 +6,7 @@
 
 # Claude Code transient state
 .claude/.credentials.json
+.claude/.last-cleanup
 .claude/mcp-needs-auth-cache.json
 .claude/settings.local.json
 .claude/backups/

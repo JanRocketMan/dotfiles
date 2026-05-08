@@ -6,11 +6,25 @@ alias nbox='$HOME/nanobox/nbox'
 # Claude: sandboxed via nanobox by default, explicit opt-out
 alias claude-unsafe='command claude'
 claude() {
+    local -a nbox_args=() claude_args=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --extra)
+                [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
+                nbox_args+=(--extra-dir "$2")
+                shift 2
+                ;;
+            *)
+                claude_args+=("$1")
+                shift
+                ;;
+        esac
+    done
     if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
-        "$HOME/nanobox/nbox" run claude --permission-mode auto "$@"
+        "$HOME/nanobox/nbox" run "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
     else
         srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
-            bash -c '"$HOME"/nanobox/nbox run claude --permission-mode auto "$@"' _ "$@"
+            bash -c '"$HOME"/nanobox/nbox run "$@"' _ "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
     fi
 }
 
