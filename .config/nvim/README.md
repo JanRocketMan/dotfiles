@@ -37,7 +37,7 @@ Neovim and tools:
 - `fd==10.1.0`: [linux](https://github.com/sharkdp/fd/releases/download/v10.1.0/fd-v10.1.0-x86_64-unknown-linux-musl.tar.gz) and [macos-arm](https://github.com/sharkdp/fd/releases/download/v10.1.0/fd-v10.1.0-aarch64-apple-darwin.tar.gz)
 
 A bunch of python libraries:
-- `pyright` for autocompletion and static type checking
+- `ty` for autocompletion and static type checking
 - `ruff` for linting and autoformat
 - `debugpy` for debugging
 
@@ -58,7 +58,7 @@ git clone https://github.com/JanRocketMan/frozen.nvim.git ~/.config/nvim
 
 3. Make sure you have `nvim`, `fd` and `rg` in your system path. Then run `nvim` to install all packages & exit it to apply all changes
 
-4. To use this config for python projects make sure to install necessary tools via `pip install pyright ruff debugpy`. Use python/uv environment to avoid polluting your global python. For you can install uv with:
+4. To use this config for python projects make sure to install necessary tools via `pip install ty ruff debugpy`. Use python/uv environment to avoid polluting your global python. For you can install uv with:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```

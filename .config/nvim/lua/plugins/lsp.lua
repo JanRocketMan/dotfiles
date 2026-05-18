@@ -54,7 +54,20 @@ return {
 
       -- launch installed language server
       local capabilities = require('blink.cmp').get_lsp_capabilities()
-      require('lspconfig').pyright.setup{capabilities=capabilities}
+
+      -- Define ty manually if this nvim-lspconfig version doesn't include it yet
+      local configs = require('lspconfig.configs')
+      local util = require('lspconfig.util')
+      if not configs.ty then
+        configs.ty = {
+          default_config = {
+            cmd = { 'ty', 'server' },
+            filetypes = { 'python' },
+            root_dir = util.root_pattern('ty.toml', 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', '.git'),
+          },
+        }
+      end
+      require('lspconfig').ty.setup{capabilities=capabilities}
       require('lspconfig').zls.setup{capabilities=capabilities}
       require('lspconfig').clangd.setup{}
     end,
