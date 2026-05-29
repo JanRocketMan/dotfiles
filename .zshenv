@@ -12,9 +12,11 @@ skip_global_compinit=1
 # User
 export USER="${USER:-$(whoami)}"
 
-# Local zsh modules/functions for compute nodes without system zsh
-if [[ -d "$HOME/.local/lib/zsh" ]]; then
-    module_path=("$HOME/.local/lib/zsh/5.8" $module_path)
+# Local zsh modules/functions for compute nodes without system zsh.
+# Derive the version dir from the running zsh ($ZSH_VERSION) instead of
+# hardcoding it — install.sh extracts whatever version apt provides.
+if [[ -d "$HOME/.local/lib/zsh/$ZSH_VERSION" ]]; then
+    module_path=("$HOME/.local/lib/zsh/$ZSH_VERSION" $module_path)
     fpath=("$HOME/.local/share/zsh/functions/"**/*(N/) $fpath)
 fi
 

@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). The repo root mirrors `$HOME` — deploy everything with `stow .`.
+Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). The repo root mirrors `$HOME` — deploy everything with `stow --no-folding .`.
 
 ## Setup
 
@@ -10,10 +10,13 @@ git clone --recurse-submodules git@github.com:JanRocketMan/dotfiles.git ~/dotfil
 cd ~/dotfiles
 
 # Dry run (preview what will be symlinked)
-stow -n -v .
+stow -n -v --no-folding .
 
 # Deploy
-stow .
+# --no-folding forces real directories + per-file symlinks. Without it, on a
+# fresh machine stow "folds" ~/.local and ~/.config into single symlinks back
+# into this repo, so install.sh's downloads and app state pollute the repo tree.
+stow --no-folding .
 
 # Install all tools (reads URLs from TOOLS.md)
 bash install.sh

@@ -1,6 +1,9 @@
 # Real credentials (never commit)
 .config/nanobox/credentials.json
 
+# Machine-specific nanobox sandbox config
+.config/nanobox/config.yaml
+
 # Machine-specific cluster config
 .config/slurm/cluster.conf
 
@@ -39,3 +42,46 @@
 # Generated files
 *.pyc
 __pycache__/
+
+# ── install.sh-managed toolchain ──────────────────────────────────────────────
+# On a fresh machine, `stow .` tree-folds ~/.local and ~/.config into symlinks
+# pointing at this repo, so install.sh's downloads (and app state) land in the
+# repo tree. Deploy with `stow --no-folding .` to avoid this; these patterns are
+# the safety net regardless. Everything below is re-downloadable from TOOLS.md.
+
+# Downloaded binaries / tool shims in ~/.local/bin (rg, fd, fzf, jq, zsh, jj,
+# glab, vifm, uv, uvx, bwrap, mitm*, uv's env scripts). Track only hand-authored
+# scripts via an explicit allowlist below.
+.local/bin/*
+!.local/bin/claude-context
+
+# zsh extracted from the system .deb (modules + functions)
+.local/lib/zsh/
+.local/share/zsh/
+
+# zinit plugin manager (git-cloned by install.sh)
+.local/share/zinit/
+
+# App-generated runtime state and desktop entries
+.local/state/
+.local/share/applications/
+
+# uv local data (tool venvs, cache, credentials)
+.local/share/uv/
+
+# Neovim plugin/runtime data (lazy.nvim installs, netrw history, etc.).
+# Config lives in .config/nvim/; .config/nvim/lazy-lock.json pins versions.
+.local/share/nvim/
+
+# uv installer artifacts
+.config/uv/
+.config/fish/conf.d/uv.env.fish
+
+# glab config (config.yml holds a personal access token) + aliases
+.config/glab-cli/
+
+# jj user config (identity/aliases) — keep machine-local
+.config/jj/
+
+# Desktop default-app associations (machine/DE-specific)
+.config/mimeapps.list

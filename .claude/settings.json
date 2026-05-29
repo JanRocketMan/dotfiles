@@ -122,7 +122,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-opus-4-6[1m]",
+  "model": "claude-opus-4-8[1m]",
   "hooks": {
     "SessionStart": [
       {
@@ -171,6 +171,6 @@
   "effortLevel": "high",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true,
-  "theme": "dark"
+  "theme": "dark",
+  "skipAutoPermissionPrompt": true
 }

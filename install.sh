@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # install.sh — Bootstrap dotfiles dependencies on a new machine.
-# Run AFTER `stow .` has symlinked everything into place.
+# Run AFTER `stow --no-folding .` has symlinked everything into place.
 #
 # All download URLs come from TOOLS.md — the single source of truth
 # for external dependencies. If a tool is compromised, edit that file.
@@ -158,9 +158,14 @@ fi
 
 # ── Editors & file managers ───────────────────────────────────────────────────
 
-# Neovim: tarball-tree (directory with bin/, lib/, share/)
-if command -v nvim &>/dev/null; then
-    echo "[ok] nvim already installed: $(nvim --version 2>&1 | head -1)"
+# Neovim: tarball-tree (directory with bin/, lib/, share/).
+# Check the install location, not `command -v nvim`: a stray nvim binary on
+# PATH (e.g. dropped into ~/.local/bin) would otherwise fool the guard into
+# skipping the install, leaving the binary separated from its runtime tree
+# (-> "module 'vim.ui.clipboard.osc52' not found" / missing $VIMRUNTIME).
+NVIM_BIN="$HOME/nvim-linux64/bin/nvim"
+if [[ -x "$NVIM_BIN" ]]; then
+    echo "[ok] nvim already installed: $("$NVIM_BIN" --version 2>&1 | head -1)"
 else
     url="$(manifest_get nvim url)"
     bin_path="$(manifest_get nvim binary)"
@@ -175,7 +180,7 @@ else
             mv "$bin_path" "$HOME/nvim-linux64"
         )
         rm -rf "$tmpdir"
-        echo "[ok] nvim installed: $(nvim --version 2>&1 | head -1)"
+        echo "[ok] nvim installed: $("$NVIM_BIN" --version 2>&1 | head -1)"
     else
         echo "[skip] nvim: no URL for $PLATFORM"
     fi
@@ -388,16 +393,9 @@ if [[ -n "$ZSH_PATH" && "$SHELL" != *"zsh"* ]]; then
     if timeout 5 chsh -s "$ZSH_PATH" </dev/null 2>/dev/null; then
         echo "[ok] Default shell set to $ZSH_PATH"
     else
-        PROFILE="$HOME/.bash_profile"
-        EXEC_LINE='[[ -x "$HOME/.local/bin/zsh" && -z $ZSH_VERSION ]] && exec "$HOME/.local/bin/zsh" -l'
-        if ! grep -qF 'exec "$HOME/.local/bin/zsh"' "$PROFILE" 2>/dev/null; then
-            echo "" >> "$PROFILE"
-            echo "# Auto-switch to zsh on login (no sudo for chsh)" >> "$PROFILE"
-            echo "$EXEC_LINE" >> "$PROFILE"
-            echo "[ok] Added zsh exec to $PROFILE"
-        else
-            echo "[ok] $PROFILE already execs zsh"
-        fi
+        # No need to edit .bash_profile: the stowed copy already execs zsh
+        # on login (preserving -c commands). Just inform the user.
+        echo "[ok] chsh unavailable; .bash_profile already auto-switches to zsh on login"
     fi
 elif [[ -n "$ZSH_PATH" ]]; then
     echo "[ok] Default shell is already zsh"
