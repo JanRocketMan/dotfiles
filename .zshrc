@@ -173,3 +173,4 @@ _auto_venv  # run once on shell start
 # ── Local overrides ───────────────────────────────────────────────────────────
 
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+source <(COMPLETE=zsh jj)

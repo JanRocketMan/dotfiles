@@ -1,0 +1,17 @@
+{
+  "lastChangelogVersion": "0.79.8",
+  "defaultProvider": "opencode-go",
+  "defaultModel": "glm-5.2",
+  "defaultThinkingLevel": "high",
+  "quietStartup": true,
+  "enableInstallTelemetry": false,
+  "enableAnalytics": false,
+  "theme": "codeyellow",
+  "skills": [
+    "~/.claude/skills"
+  ],
+  "extensions": [
+    "extensions/footer-info.ts",
+    "extensions/claude-compat.ts"
+  ]
+}

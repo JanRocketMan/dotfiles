@@ -7,6 +7,11 @@
 # Machine-specific cluster config
 .config/slurm/cluster.conf
 
+# Pi machine-specific / secret state
+.pi/agent/auth.json
+.pi/agent/trust.json
+.pi/agent/sessions/
+
 # Claude Code transient state
 .claude/.credentials.json
 .claude/.last-cleanup
