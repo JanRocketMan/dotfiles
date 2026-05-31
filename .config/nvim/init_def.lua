@@ -116,16 +116,16 @@ vim.keymap.set('n', 'x', '"_x')
 vim.keymap.set('v', 'p', '"_dP')
 
 -- Use emacs-compatible keymaps in insert mode
-vim.keymap.set('i', '<M-f>', 'w')
-vim.keymap.set('i', '<M-b>', 'b')
+vim.keymap.set('i', '<M-f>', ' w')
+vim.keymap.set('i', '<M-b>', ' b')
 vim.keymap.set('i', '', '')
-vim.keymap.set('i', '', 'I')
-vim.keymap.set('i', '', 'A')
-vim.keymap.set('i', '', 'u')
-vim.keymap.set('i', '<M-BS>', '')
-vim.keymap.set('i', '<C-w>', '"_dB')
-vim.keymap.set('i', '<C-Right>', 'W')
-vim.keymap.set('i', '<C-Left>', 'B')
+vim.keymap.set('i', '', ' I')
+vim.keymap.set('i', ' ', ' A')
+vim.keymap.set('i', ' ', ' u')
+vim.keymap.set('i', '<M-BS>', ' ')
+vim.keymap.set('i', '<C-w>', ' "_dB')
+vim.keymap.set('i', '<C-Right>', ' W')
+vim.keymap.set('i', '<C-Left>', ' B')
 
 -- Clear cmd messages and highlight on Esc
 vim.keymap.set('n', '<Esc>', ':nohlsearch<CR>:echo ""<CR>')
@@ -355,4 +355,4 @@ function recent_files_picker()
 end
 vim.api.nvim_create_autocmd("BufEnter", {group = minimal_group, callback = function() vim.treesitter.stop() end})
 
--- vim: ts=2 sts=2 sw=2 et
+-- vim: ts=2 sts=2 sw=2 et`

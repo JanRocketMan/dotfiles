@@ -1,0 +1,8 @@
+{
+  "plugins": {
+    "jj-conflict-highlight.nvim": {
+      "rev": "b351cb58ee1254fff5b344e740bdee1adae358c7",
+      "src": "https://github.com/Spiegie/jj-conflict-highlight.nvim"
+    }
+  }
+}
