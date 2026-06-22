@@ -84,13 +84,14 @@ then
 end
 
 -- [3] Keymaps
--- Disable copy when we delete symbols in normal mode, keep last yanked when pasting
+-- Disable copy when we delete/change symbols in normal mode, keep last yanked when pasting
 vim.keymap.set({'n', 'v'}, 'd', '"_d')
+vim.keymap.set('n', 'c', '"_c')
 vim.keymap.set('n', 'x', '"_x')
 vim.keymap.set('v', 'p', '"_dP')
 -- Load current file path to clipboard, execute terminal command with scratch buffer
-vim.keymap.set('n', '<leader>y', function() vim.fn.setreg('+', vim.fn.expand('%:p')) vim.fn.setreg('"', vim.fn.expand('%:p')) end, { desc = 'Cop[y] to clipboard current path' })
-vim.keymap.set('n', '<leader>ty', function() vim.fn.setreg('+', vim.fn.expand('%:.')) vim.fn.setreg('"', vim.fn.expand('%:p')) end, { desc = 'Cop[y] to clipboard current path' })
+vim.keymap.set('n', '<leader>y', function() vim.fn.setreg('+', vim.fn.expand('%:p')) vim.fn.setreg('"', vim.fn.expand('%:p')) end, { desc = 'Cop[y] to clipboard absolute current path' })
+vim.keymap.set('n', '<leader>ty', function() vim.fn.setreg('+', vim.fn.expand('%:.')) vim.fn.setreg('"', vim.fn.expand('%:p')) end, { desc = 'Cop[y] to clipboard relative current path' })
 -- Clear cmd messages and highlight on Esc
 vim.keymap.set('n', '<Esc>', ':nohlsearch<CR>:echo ""<CR>')
 -- Use emacs-compatible keymaps in insert mode

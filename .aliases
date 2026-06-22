@@ -31,7 +31,7 @@ claude() {
 }
 
 # Editors
-alias v='nvim'
+alias nvim='nvim -u ~/.config/nvim/lua/init.lua'
 alias vim='nvim -u ~/.config/nvim/lua/init.lua'
 
 # ls
