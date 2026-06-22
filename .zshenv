@@ -53,5 +53,6 @@ export TORCHINDUCTOR_CACHE_DIR="$HOME/.cache/torch_inductor"
 export TRITON_CACHE_DIR="$HOME/.cache/torch_triton"
 export TORCH_EXTENSIONS_DIR="$HOME/.cache/torch_extensions"
 export TORCH_HOME="$HOME/.cache/torch_hub"
+export PATH="$HOME/google-cloud-sdk/bin:$PATH"
 export HOMEBREW_NO_AUTO_UPDATE=1
 export PI_OFFLINE=1
