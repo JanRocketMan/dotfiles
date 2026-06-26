@@ -30,6 +30,34 @@ claude() {
     [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
 }
 
+# pi - same behaviour as claude
+alias pi-unsafe='command $HOME/pi/pi'
+pi() {
+    local -a nbox_args=() pi_args=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --extra)
+                [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
+                nbox_args+=(--extra-dir "$2")
+                shift 2
+                ;;
+            *)
+                pi_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+    [[ -n "$TMUX" ]] && tmux rename-window "cl@${PWD##*/}"
+    if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
+        "$HOME/nanobox/nbox" run "${nbox_args[@]}" $HOME/pi/pi "${pi_args[@]}"
+    else
+        srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
+            bash -c '"$HOME"/nanobox/nbox run "$@"' _ "${nbox_args[@]}" $HOME/pi/pi "${pi_args[@]}"
+    fi
+    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
+}
+
+
 # Editors
 alias v='nvim'
 alias vim='nvim -u ~/.config/nvim/lua/init.lua'
@@ -227,4 +255,3 @@ fp() { ssh -fN -L "$1":localhost:"$1" "$2"; }
 alias perf_ui='$HOME/perfetto/serve-ui.sh'
 # Perfetto - open a trace file (works from any directory)
 alias perf='$HOME/perfetto/open-trace.sh'
-

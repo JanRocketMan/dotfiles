@@ -93,3 +93,6 @@ __pycache__/
 
 # Desktop default-app associations (machine/DE-specific)
 .config/mimeapps.list
+.pi/agent/cache
+.pi/agent/npm
+.pi/agent/models-store.json

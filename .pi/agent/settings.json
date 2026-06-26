@@ -1,7 +1,7 @@
 {
-  "lastChangelogVersion": "0.79.8",
-  "defaultProvider": "opencode-go",
-  "defaultModel": "glm-5.2",
+  "lastChangelogVersion": "0.81.1",
+  "defaultProvider": "cursor-agent",
+  "defaultModel": "gpt-5.6-sol-high-fast",
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "enableInstallTelemetry": false,
@@ -13,5 +13,8 @@
   "extensions": [
     "extensions/footer-info.ts",
     "extensions/claude-compat.ts"
+  ],
+  "packages": [
+    "npm:pi-cursor-agent"
   ]
 }
