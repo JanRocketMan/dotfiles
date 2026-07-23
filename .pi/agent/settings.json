@@ -16,5 +16,6 @@
   ],
   "packages": [
     "npm:pi-cursor-agent"
-  ]
+  ],
+  "enableSkillCommands": true
 }
