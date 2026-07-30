@@ -7,3 +7,9 @@ README\.md
 ^/TOOLS\.md
 ^/CLAUDE\.md
 ^guides
+# Deploy only the hand-authored parts of .claude; ignore all runtime state
+# (plugins, projects, sessions, snapshots, history, etc.)
+^/\.claude/(?!(?:hooks|skills)(?=/|$)|CLAUDE\.md$|keybindings\.json$|settings\.json$|statusline-command\.sh$)[^/]+
+# Deploy only the hand-authored parts of .pi/agent; ignore credentials and
+# runtime state (auth, trust, sessions, cache, npm, models-store)
+^/\.pi/agent/(?!(?:extensions|themes)(?=/|$)|CLAUDE\.md$|models\.json$|settings\.json$)[^/]+

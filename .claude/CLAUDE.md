@@ -10,8 +10,18 @@ Always use Jujutsu (`jj`) colocated with Git. Never run bare `git` commands.
 ## Writing style
 
 - Never use em dashes (`—`); use regular dashes (`-`) instead
-- Write all responses and markdown files in ASD-STE100 Simplified Technical English format
-- Follow Zinsser's four principles of quality writing: Simplicity, Brevity, Clarity, Humanity
+- Write all responses and Markdown files in ASD-STE100 Simplified Technical English
+- Follow Zinsser's four principles of quality writing: simplicity, brevity, clarity, and humanity
+- Use minimal end punctuation in user-facing prose when the layout already shows the text boundary:
+  - Omit the period at the end of a paragraph, standalone text block, heading, or list item
+  - Apply this rule to list items even when they are complete sentences
+  - Keep periods between sentences in the same paragraph
+  - Keep a question mark or exclamation mark when the meaning requires it
+  - Do not replace an omitted period with a comma or semicolon
+- Use standard end punctuation in text that a UI can concatenate:
+  - End each distinct thought in reasoning traces, progress messages, logs, and streamed text with a period
+  - Do not use line breaks, block boundaries, or trailing spaces as the only separator
+- Preserve exact punctuation in code, commands, paths, URLs, version numbers, abbreviations, direct quotations, and other literal text
 
 ## Commits
 

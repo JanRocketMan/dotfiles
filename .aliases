@@ -3,60 +3,66 @@
 # Nanobox
 alias nbox='$HOME/nanobox/nbox'
 
-# Claude: sandboxed via nanobox by default, explicit opt-out
+# Run a coding agent inside a nanobox sandbox, allocating a SLURM job first if
+# the current host can't unshare user namespaces.
+#
+# Usage: nbox_agent TMUX_TAG AGENT_CMD [FIXED_ARGS...] -- [USER_ARGS...]
+#
+# USER_ARGS are forwarded to the agent, except `--extra DIR`, which is
+# translated into nbox's `--extra-dir DIR`.
+nbox_agent() {
+    local tag="$1"; shift
+
+    local -a agent_cmd=()
+    while [[ $# -gt 0 && "$1" != "--" ]]; do
+        agent_cmd+=("$1")
+        shift
+    done
+    shift  # drop the --
+
+    local -a nbox_args=() agent_args=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --extra)
+                [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
+                nbox_args+=(--extra-dir "$2")
+                shift 2
+                ;;
+            *)
+                agent_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    [[ -n "$TMUX" ]] && tmux rename-window "$tag@${PWD##*/}"
+    if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
+        "$HOME/nanobox/nbox" run "${nbox_args[@]}" "${agent_cmd[@]}" "${agent_args[@]}"
+    else
+        srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
+            bash -c '"$HOME"/nanobox/nbox run "$@"' _ \
+            "${nbox_args[@]}" "${agent_cmd[@]}" "${agent_args[@]}"
+    fi
+    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
+}
+
+# Agents: sandboxed via nanobox by default, explicit opt-out
 alias claude-unsafe='command claude'
-claude() {
-    local -a nbox_args=() claude_args=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --extra)
-                [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
-                nbox_args+=(--extra-dir "$2")
-                shift 2
-                ;;
-            *)
-                claude_args+=("$1")
-                shift
-                ;;
-        esac
-    done
-    [[ -n "$TMUX" ]] && tmux rename-window "cl@${PWD##*/}"
-    if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
-        "$HOME/nanobox/nbox" run "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
-    else
-        srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
-            bash -c '"$HOME"/nanobox/nbox run "$@"' _ "${nbox_args[@]}" claude --permission-mode auto "${claude_args[@]}"
-    fi
-    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
-}
+claude() { nbox_agent cl claude --permission-mode bypassPermissions -- "$@"; }
 
-# pi - same behaviour as claude
-alias pi-unsafe='command $HOME/pi/pi'
-pi() {
-    local -a nbox_args=() pi_args=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --extra)
-                [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
-                nbox_args+=(--extra-dir "$2")
-                shift 2
-                ;;
-            *)
-                pi_args+=("$1")
-                shift
-                ;;
-        esac
-    done
-    [[ -n "$TMUX" ]] && tmux rename-window "cl@${PWD##*/}"
-    if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
-        "$HOME/nanobox/nbox" run "${nbox_args[@]}" $HOME/pi/pi "${pi_args[@]}"
-    else
-        srun --cpus-per-task=4 --mem=8G --time=8:00:00 --pty \
-            bash -c '"$HOME"/nanobox/nbox run "$@"' _ "${nbox_args[@]}" $HOME/pi/pi "${pi_args[@]}"
-    fi
-    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
-}
+alias pi-unsafe='command pi'
+pi() { nbox_agent pi pi -- "$@"; }
 
+alias tau-unsafe='command tau'
+tau() { nbox_agent tau tau -- "$@"; }
+
+alias codex-unsafe='command codex'
+codex() {
+    nbox_agent co codex \
+        --dangerously-bypass-approvals-and-sandbox \
+        --dangerously-bypass-hook-trust \
+        -- "$@"
+}
 
 # Editors
 alias v='nvim'
