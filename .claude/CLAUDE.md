@@ -10,6 +10,8 @@ Always use Jujutsu (`jj`) colocated with Git. Never run bare `git` commands.
 ## Writing style
 
 - Never use em dashes (`—`); use regular dashes (`-`) instead
+- Write all responses and markdown files in ASD-STE100 Simplified Technical English format
+- Follow Zinsser's four principles of quality writing: Simplicity, Brevity, Clarity, Humanity
 
 ## Commits
 

@@ -1,8 +1,8 @@
 {
-  "lastChangelogVersion": "0.81.1",
-  "defaultProvider": "cursor-agent",
-  "defaultModel": "gpt-5.6-sol-high-fast",
-  "defaultThinkingLevel": "high",
+  "lastChangelogVersion": "0.83.0",
+  "defaultProvider": "opencode",
+  "defaultModel": "deepseek-v4-flash",
+  "defaultThinkingLevel": "max",
   "quietStartup": true,
   "enableInstallTelemetry": false,
   "enableAnalytics": false,
