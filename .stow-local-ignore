@@ -1,5 +1,6 @@
 \.git
 \.jj
+\.agents
 README\.md
 ^/LICENSE
 ^/install\.sh

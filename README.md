@@ -40,6 +40,15 @@ This also makes auditing easy: `TOOLS.md` is the complete list of every remote r
 - `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
 - `skills/` - on-demand skills for GitLab, Jira, and shared PDB workflows
 
+### `.codex/` - Codex config
+
+- `AGENTS.md` - personal instructions adapted from `.claude/CLAUDE.md`
+- `config.toml` - model, reasoning, approvals, editor, web search, and TUI shortcuts
+- `hooks.json` / `hooks/` - nanobox context injection at session start
+
+Codex skills and the Claude status-line command are intentionally not migrated.
+The sandboxed `codex` wrapper bypasses Codex's inner approval, sandbox, and hook-trust prompts because nanobox provides the sandbox. `codex-unsafe` runs Codex directly with the config's `on-request` approval policy.
+
 ### `.zshrc` / `.zshenv` / `.aliases` — Zsh
 
 Fish-like zsh setup with zinit plugin manager:
@@ -66,6 +75,9 @@ tau                             # sandboxed via nanobox
 pdbox python train.py           # dedicated sandboxed PDB debuggee pane
 tau --debug                     # share one same-project sandboxed PDB pane
 tau --debug=%12                 # select an explicit PDB pane
+codex                           # sandboxed via nanobox
+codex resume --last             # resume the latest Codex session
+codex-unsafe                    # run Codex without nanobox
 ```
 
 For shared debugging, start the debuggee with `pdbox python ...` in one tmux pane and wait at `breakpoint()`. `pdbox` replaces the host shell with a nanobox `--debuggee` run, so the pane closes instead of returning to a host shell. Start `tau --debug` from the same project directory in another pane. The conditional `.tau/extensions/nbox_pdb.py` extension gives Tau a `pdb` tool only for that run

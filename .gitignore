@@ -37,6 +37,27 @@
 .claude/policy-limits.json
 .claude/.nfs*
 
+# Codex transient state (config and hooks remain tracked)
+.codex/.sandbox_migration
+.codex/.tmp/
+.codex/auth.json
+.codex/cache/
+.codex/cloud-config-bundle-cache.json
+.codex/goals*.sqlite*
+.codex/history.jsonl
+.codex/installation_id
+.codex/logs*.sqlite*
+.codex/memories*.sqlite*
+.codex/models_cache.json
+.codex/packages/
+.codex/plugins/
+.codex/sessions/
+.codex/shell_snapshots/
+.codex/skills/
+.codex/state*.sqlite*
+.codex/tmp/
+.codex/version.json
+
 # Zsh generated/local
 .zsh_history
 .zshrc.local

@@ -8,3 +8,4 @@ GNU Stow-managed dotfiles repo. The repo root mirrors `$HOME` — deploy with `s
 - `install.sh` reads download URLs from `TOOLS.md` — no hardcoded URLs in scripts
 - Shell: zsh with powerlevel10k, tmux, neovim
 - `.claude/` contains Claude Code config (settings, skills, statusline) — also deployed via stow
+- `.codex/` contains Codex config (instructions and hooks) — also deployed via stow
