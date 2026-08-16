@@ -149,17 +149,17 @@ export VISUAL='nvim -u ~/.config/nvim/lua/init.lua'
 # ── Auto-activate .venv on directory entry ────────────────────────────────────
 
 _auto_venv() {
-    # Deactivate if we left the venv's project
-    if [[ -n "$VIRTUAL_ENV" && ! "$PWD" == "${VIRTUAL_ENV%/.venv*}"* ]]; then
-        if (( $+functions[deactivate] )); then
-            deactivate
-        else
-            unset VIRTUAL_ENV
+    # A local project venv always wins over any parent venv
+    if [[ -f .venv/bin/activate ]]; then
+        if [[ -n "$VIRTUAL_ENV" && "$VIRTUAL_ENV" != "$PWD/.venv" ]]; then
+            (( $+functions[deactivate] )) && deactivate || unset VIRTUAL_ENV
         fi
+        [[ -z "$VIRTUAL_ENV" ]] && source .venv/bin/activate
+        return
     fi
-    # Activate if cwd has a .venv
-    if [[ -z "$VIRTUAL_ENV" && -f .venv/bin/activate ]]; then
-        source .venv/bin/activate
+    # No local venv: deactivate if we left the activated project root
+    if [[ -n "$VIRTUAL_ENV" && "$PWD" != "${VIRTUAL_ENV%/.venv}" && "$PWD" != "${VIRTUAL_ENV%/.venv}"/* ]]; then
+        (( $+functions[deactivate] )) && deactivate || unset VIRTUAL_ENV
     fi
 }
 autoload -Uz add-zsh-hook
