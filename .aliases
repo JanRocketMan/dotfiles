@@ -8,8 +8,9 @@ alias nbox='$HOME/nanobox/nbox'
 #
 # Usage: nbox_agent TMUX_TAG AGENT_CMD [FIXED_ARGS...] -- [USER_ARGS...]
 #
-# USER_ARGS are forwarded to the agent, except `--extra DIR`, which is
-# translated into nbox's `--extra-dir DIR`.
+# USER_ARGS are forwarded to the agent, except:
+# - `--extra DIR` becomes nbox's `--extra-dir DIR`
+# - `--debug[=PANE]` enables nbox's optional PDB bridge
 nbox_agent() {
     local tag="$1"; shift
 
@@ -27,6 +28,16 @@ nbox_agent() {
                 [[ $# -ge 2 ]] || { echo "error: --extra requires a directory" >&2; return 1; }
                 nbox_args+=(--extra-dir "$2")
                 shift 2
+                ;;
+            --debug)
+                nbox_args+=(--debug)
+                shift
+                ;;
+            --debug=*)
+                [[ -n "${1#--debug=}" ]] \
+                    || { echo "error: --debug= requires a tmux pane target" >&2; return 1; }
+                nbox_args+=("$1")
+                shift
                 ;;
             *)
                 agent_args+=("$1")
@@ -93,6 +104,15 @@ ta() {
 }
 
 # Python / debugging
+# Replace this tmux pane's shell with a sandboxed debuggee. Closing the nbox run
+# closes the pane, so the PDB bridge can never type into a returned host shell.
+pdbox() {
+    [[ -n "${TMUX:-}" ]] || { echo "error: pdbox requires tmux" >&2; return 1; }
+    [[ $# -ge 1 ]] || { echo "usage: pdbox COMMAND [ARGS...]" >&2; return 1; }
+    tmux rename-window "pdb@${PWD##*/}"
+    exec "$HOME/nanobox/nbox" run --debuggee "$@"
+}
+
 alias dpython='PYDEVD_DISABLE_FILE_VALIDATION=1 python -m debugpy --wait-for-client --listen'
 alias rpython='python -u -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=gpu'
 alias upi='uv pip install'

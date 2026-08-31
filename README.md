@@ -38,7 +38,7 @@ This also makes auditing easy: `TOOLS.md` is the complete list of every remote r
 - `settings.json` — permissions (allow/deny/ask), plugins
 - `keybindings.json` — custom keybindings (vim-style navigation, ctrl shortcuts)
 - `statusline-command.sh` — status line showing model, effort, project, VCS branch, context bar
-- `skills/` — on-demand skills for GitLab and Jira workflows
+- `skills/` - on-demand skills for GitLab, Jira, and shared PDB workflows
 
 ### `.zshrc` / `.zshenv` / `.aliases` — Zsh
 
@@ -56,13 +56,19 @@ First launch installs plugins automatically. Run `p10k configure` to set up prom
 
 ### Sandbox — [nanobox](https://github.com/JanRocketMan/nanobox)
 
-Claude runs inside a [nanobox](https://github.com/JanRocketMan/nanobox) sandbox by default (via the `claude` alias). Nanobox is an agent-agnostic bwrap+mitmproxy tool that confines any command to a minimal filesystem view — no root required.
+Claude, Pi, Tau, and Codex run inside a [nanobox](https://github.com/JanRocketMan/nanobox) sandbox by default. Nanobox is an agent-agnostic bwrap+mitmproxy tool that confines any command to a minimal filesystem view - no root required.
 
 ```bash
-claude                          # sandboxed via nanobox (alias)
+claude                          # sandboxed via nanobox
 claude --resume                 # args pass through transparently
-claude-unsafe                   # unsandboxed, plan permission mode
+claude-unsafe                   # explicit unsandboxed launch
+tau                             # sandboxed via nanobox
+pdbox python train.py           # dedicated sandboxed PDB debuggee pane
+tau --debug                     # share one same-project sandboxed PDB pane
+tau --debug=%12                 # select an explicit PDB pane
 ```
+
+For shared debugging, start the debuggee with `pdbox python ...` in one tmux pane and wait at `breakpoint()`. `pdbox` replaces the host shell with a nanobox `--debuggee` run, so the pane closes instead of returning to a host shell. Start `tau --debug` from the same project directory in another pane. The conditional `.tau/extensions/nbox_pdb.py` extension gives Tau a `pdb` tool only for that run
 
 ### `.config/vifm/` — Vifm file manager
 

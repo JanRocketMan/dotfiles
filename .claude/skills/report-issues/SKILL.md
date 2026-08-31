@@ -1,13 +1,6 @@
 ---
 name: report-issues
-description: |
-  Maintain a persistent ISSUES.md ledger at the root of the current repository.
-  Use whenever work on a task surfaces problems - stale code, bad tests,
-  outdated docs, workarounds, unverifiable changes, anything that cost time or
-  will cost time later. Record issues as they are noticed, without waiting for
-  the user to ask. Also use when the user asks what issues were noted, asks to
-  review or summarize the ledger, or says complain, gripe, file an issue, or
-  report a problem.
+description: Maintain ISSUES.md, a persistent issue ledger at the repo root - record problems noticed while working (stale code, bad tests, outdated docs, workarounds). Use when asked to report, review, or summarize issues.
 license: MIT
 metadata:
   version: "1.0.0"
