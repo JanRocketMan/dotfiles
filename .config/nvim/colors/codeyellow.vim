@@ -652,17 +652,3 @@ function! s:RainbowFix() abort
   exec 'hi RainbowDelimiterViolet guifg=' . l:color2
   exec 'hi RainbowDelimiterCyan   guifg=' . l:color1
 endfunction
-
-" Diffview:
-call <sid>hi('DiffviewFilePanelTitle', s:cdPopupFront, {}, 'bold', {})
-call <sid>hi('DiffviewFilePanelCounter', s:cdPopupFront, {}, 'bold', {})
-call <sid>hi('DiffviewFilePanelFileName', s:cdOrange, {}, 'none', {})
-call <sid>hi('DiffviewFilePanelPath', s:cdFront, {}, 'none', {})
-call <sid>hi('DiffviewStatusAdded', s:cdGreen, {}, 'none', {})
-call <sid>hi('DiffviewStatusModified', s:cdBlue, {}, 'none', {})
-call <sid>hi('DiffviewStatusDeleted', s:cdRed, {}, 'none', {})
-call <sid>hi('DiffviewDim1', s:cdLeftDark, {}, 'none', {})
-call <sid>hi('DiffviewNonText', s:cdLeftDark, {}, 'none', {})
-call <sid>hi('DiffviewFilePanelInsertions', s:cdGreen, {}, 'none', {})
-call <sid>hi('DiffviewFilePanelDeletions', s:cdRed, {}, 'none', {})
-call <sid>hi('DiffviewCursorLine', {}, s:cdLeftMid, 'none', {})
