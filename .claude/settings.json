@@ -19,6 +19,7 @@
       "Edit(~/.claude/settings.local.json)",
       "Edit(**/.claude/settings.json)",
       "Edit(**/.claude/settings.local.json)",
+      "Edit(**/ISSUES.md)",
       "Bash(pre-commit *)",
       "Bash(chmod +x *)",
       "Bash(ruff *)",
@@ -72,7 +73,8 @@
       "Write(~/.claude/settings.json)",
       "Write(~/.claude/settings.local.json)",
       "Write(**/.claude/settings.json)",
-      "Write(**/.claude/settings.local.json)"
+      "Write(**/.claude/settings.local.json)",
+      "Write(**/ISSUES.md)"
     ],
     "deny": [
       "Bash(rm *)",
