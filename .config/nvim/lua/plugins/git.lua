@@ -199,6 +199,29 @@ return {
         vim.keymap.set("n", "q", close_preview_tab, { buffer = 0, nowait = true, silent = true, desc = "Close preview tab" })
       end
 
+      -- <Tab> toggles the file panel: the panel of the active diff session,
+      -- or a standalone commit panel for the tab when no diff is open.
+      local function toggle_file_panel()
+        local tab = vim.api.nvim_get_current_tabpage()
+        local session = state.sessions[tab]
+        if session and not session.disposed and type(session.toggle_commit_panel) == "function" then
+          session:toggle_commit_panel()
+          return
+        end
+        local panel = state.panels[tab]
+        if panel and not panel.disposed and type(panel.toggle_commit_panel) == "function" then
+          panel:toggle_commit_panel()
+        end
+      end
+
+      -- <Tab> toggles the panel from every buffer the session owns: the
+      -- content panes and the panel list itself.
+      local function install_panel_toggle_map(buf)
+        if vim.api.nvim_buf_is_valid(buf) and diffbandit.is_running({ buf = buf }) then
+          vim.keymap.set("n", "<Tab>", toggle_file_panel, { buffer = buf, nowait = true, silent = true, desc = "Toggle file panel" })
+        end
+      end
+
       vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
         group = augroup,
         callback = function(args)
@@ -226,6 +249,7 @@ return {
           if not diffbandit.is_running({ buf = buf }) then
             remove_map_if_ours(buf, "q", close_preview_tab)
             remove_map_if_ours(buf, "<leader>o", open_file_in_tab)
+            remove_map_if_ours(buf, "<Tab>", toggle_file_panel)
             remove_map_if_ours(buf, "<PageDown>", scroll_down)
             remove_map_if_ours(buf, "<PageUp>", scroll_up)
           end
@@ -239,9 +263,11 @@ return {
             vim.defer_fn(function()
               if vim.api.nvim_buf_is_valid(buf) then
                 install_page_maps(buf, tab)
+                install_panel_toggle_map(buf)
               end
             end, 50)
           end
+          install_panel_toggle_map(buf)
 
           if not diffbandit.is_running({ buf = buf }) then
             return
@@ -296,6 +322,198 @@ return {
       local merge_goto_queue_file = Merge.goto_queue_file
       function Merge:goto_queue_file(index, chunk_position, opts)
         return merge_goto_queue_file(self, wrap_queue_index(self, index), chunk_position, opts)
+      end
+
+      -- ---- File panel ----------------------------------------------------
+      -- The panel file list is a flat buffer built by panel/init.lua
+      -- (build_rows): one section header per group, then a row per file with
+      -- its parent directory dotted at the right. The wrappers below give it
+      -- directory header rows, drop the status/stage signs, drive the file
+      -- highlights, drop the commit-message window, open the panel with
+      -- :DiffBanditGit, and keep the diff panes balanced when it toggles.
+      local Panel = require("diffbandit.panel")
+      local Config = require("diffbandit.config")
+      local ui = require("diffbandit.util.ui")
+      local nvim_util = require("diffbandit.util.nvim")
+      local layout_util = require("diffbandit.util.layout")
+
+      local function parent_dir(path)
+        local dir = vim.fn.fnamemodify(path or "", ":h")
+        return dir == "." and "" or dir
+      end
+
+      -- Same status letters the plugin's own row builder uses.
+      local function entry_kind(entry)
+        entry = entry or {}
+        if entry.kind and entry.kind ~= "" then
+          return entry.kind
+        end
+        if entry.untracked then
+          return "untracked"
+        end
+        if entry.status == "A" then
+          return "added"
+        elseif entry.status == "D" then
+          return "deleted"
+        elseif entry.status == "R" then
+          return "renamed"
+        elseif entry.status == "C" then
+          return "copied"
+        elseif entry.status == "U" then
+          return "unmerged"
+        end
+        return "modified"
+      end
+
+      local function file_highlight(entry)
+        local kind = entry_kind(entry)
+        if kind == "added" or kind == "untracked" then
+          return "DiffBanditAdd"
+        end
+        if kind == "deleted" or kind == "unmerged" then
+          return "DiffBanditDelete"
+        end
+        return nil
+      end
+
+      -- Rows show the file name only: no stage box, no status glyph, no
+      -- dotted parent (the directory header above the file carries it).
+      local panel_build_rows = Panel.build_rows
+      Panel.build_rows = function(session)
+        local width = math.max(20, tonumber(Config.section(session.config, "git", "panel").width) or 42)
+        local rows = {}
+        local last_parent
+        for _, row in ipairs(panel_build_rows(session)) do
+          if row.type == "section" then
+            last_parent = nil
+          elseif row.type == "file" then
+            local parent = parent_dir(row.entry and row.entry.path)
+            -- Root-level entries share the directory headers' level; a file
+            -- under a header sits one level deeper than the header.
+            local indent = parent ~= "" and 4 or 2
+            if parent ~= "" and parent ~= last_parent then
+              rows[#rows + 1] = {
+                type = "dir",
+                text = "  " .. ui.truncate_display(parent .. "/", width - 2),
+                name_col = 2,
+              }
+            end
+            local name = ui.truncate_display(vim.fn.fnamemodify((row.entry and row.entry.path) or "", ":t"), width - indent)
+            row.text = string.rep(" ", indent) .. name
+            row.name_col = indent
+            row.name_end_col = indent + #name
+            last_parent = parent
+          end
+          rows[#rows + 1] = row
+        end
+        return rows
+      end
+
+      -- The plugin's highlight pass runs inside the original render, so
+      -- repaint the nav buffer afterwards: modified files stay plain,
+      -- added/untracked stay green, deleted/unmerged stay red, and the diff
+      -- that is open in the viewer gets the change (blue) highlight.
+      local function repaint_nav(session)
+        local panel = session.panel
+        if not (panel and panel.nav_buf and vim.api.nvim_buf_is_valid(panel.nav_buf)) then
+          return
+        end
+        vim.api.nvim_buf_clear_namespace(panel.nav_buf, session.ns, 0, -1)
+        local current = session.file_queue_index or (session.file_queue or {}).index
+        for line, row in ipairs(panel.rows or {}) do
+          local group
+          if row.type == "section" then
+            group = "DiffBanditStatusAccent"
+          elseif row.type == "dir" then
+            group = "DiffBanditMutedText"
+          elseif row.type == "file" then
+            if current and row.index == current then
+              group = "DiffBanditChangeLeft"
+            else
+              group = file_highlight(row.entry)
+            end
+          end
+          if group then
+            vim.api.nvim_buf_add_highlight(panel.nav_buf, session.ns, group, line - 1, row.name_col or 0, row.name_end_col or -1)
+          end
+        end
+      end
+
+      local panel_render_nav = Panel.render_nav
+      Panel.render_nav = function(session, preferred_entry_index, opts)
+        panel_render_nav(session, preferred_entry_index, opts)
+        repaint_nav(session)
+      end
+
+      -- The panel is the file list only: open the nav window and skip the
+      -- commit-message window the plugin pairs with it.
+      local panel_open_windows = Panel.open_windows
+      Panel.open_windows = function(host, anchor)
+        local width = Config.section(host.config, "git", "panel").width or 42
+        local nav_win = vim.api.nvim_open_win(host.panel.nav_buf, false, {
+          split = "left",
+          win = anchor,
+          width = width,
+        })
+        host.panel.nav_win = nav_win
+        host.panel.commit_win = nil
+        host.panel.visible = true
+        nvim_util.set_window_options(nav_win, layout_util.win_opts.panel())
+        nvim_util.set_window_width(nav_win, width)
+        return nav_win
+      end
+
+      -- The plugin's is_open also demands the commit window, which is gone.
+      Panel.is_open = function(host)
+        local panel = host and host.panel
+        if not (panel and panel.visible and panel.nav_win and vim.api.nvim_win_is_valid(panel.nav_win)) then
+          return false
+        end
+        return true
+      end
+
+      -- Closing the panel gives its columns back, which needs a resize; the
+      -- plugin only does that in its own show/hide entry points.
+      local panel_close = Panel.close
+      Panel.close = function(session)
+        panel_close(session)
+        if session and not session.disposed and type(session.resize_layout) == "function" then
+          session:resize_layout()
+        end
+      end
+
+      -- The plugin's resize math bails out in this layout (its window list
+      -- starts with the nil overview entry and holds the closed number
+      -- panes' stale handles), so split the content panes here: what is
+      -- left of the fixed-width connector is shared evenly.
+      local function balance_content_panes(session)
+        local left, right = session.left_win, session.right_win
+        if not (left and right and vim.api.nvim_win_is_valid(left) and vim.api.nvim_win_is_valid(right)) then
+          return
+        end
+        local content = vim.api.nvim_win_get_width(left) + vim.api.nvim_win_get_width(right)
+        if content < 4 then
+          return
+        end
+        local left_width = math.floor(content / 2)
+        nvim_util.set_window_width(left, left_width)
+        nvim_util.set_window_width(right, content - left_width)
+        -- The connector keeps its fixed width through the rebalance.
+        nvim_util.set_window_width(session.connector_win, session.connector_core_width)
+      end
+
+      -- :DiffBanditGit and <leader>g open with the file panel, like the old
+      -- diffview flow. git.panel.focus_on_open still picks the focus.
+      local git_command = diffbandit.git
+      function diffbandit.git(opts)
+        local session, err = git_command(opts)
+        if session and not session.disposed and type(session.show_commit_panel) == "function" then
+          session:show_commit_panel()
+          if Config.section(session.config, "git", "panel").focus_on_open ~= "panel" then
+            Panel.focus_diff(session)
+          end
+        end
+        return session, err
       end
 
       -- Minimal diff chrome: a git diff shows only the two content panes
@@ -356,6 +574,9 @@ return {
         session_layout_resize(session)
         session.left_number_pane_width = left_pane
         session.right_number_pane_width = right_pane
+        -- The original returns early for this layout, so balance here to
+        -- keep the panes even when the panel opens or closes.
+        balance_content_panes(session)
       end
 
       local session_dispose = Session.dispose
@@ -381,6 +602,9 @@ return {
           status = { enabled = false },
         },
         git = {
+          -- Half the plugin's 42-column default: the file list only shows
+          -- names, so the diff panes get the freed columns.
+          panel = { width = 21 },
           -- diffview keys: <C-Up>/<C-Down> moved between changed files.
           -- The plugin's ]c/[c hunk keys also cross file boundaries with a
           -- confirmation, and q always closes the view.
