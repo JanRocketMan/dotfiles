@@ -298,7 +298,88 @@ return {
         return merge_goto_queue_file(self, wrap_queue_index(self, index), chunk_position, opts)
       end
 
+      -- Minimal diff chrome: a git diff shows only the two content panes
+      -- and the connector between them. The overview strips (the
+      -- signcolumn-looking bars at the far edges) and the status/header
+      -- row are plain config knobs below; the line-number panes are not
+      -- configurable, so the session layout is wrapped instead.
+      local session_layout = require("diffbandit.session.layout")
+
+      -- Two-way diff sessions only; the merge host builds its own layout.
+      local function is_two_way(session)
+        return session ~= nil and session.left_num_win ~= nil and session.connector_win ~= nil
+      end
+
+      -- Close the number panes. First keep their buffers alive (the plugin
+      -- sets bufhidden=wipe on them, and their wipeout auto-disposes the
+      -- whole session); rendering keeps writing into the buffers, and the
+      -- dispose wrapper below wipes them for real.
+      local function remove_number_panes(session)
+        if not is_two_way(session) then
+          return
+        end
+        for _, field in ipairs({ "left_num_buf", "right_num_buf" }) do
+          local buf = session[field]
+          if buf and vim.api.nvim_buf_is_valid(buf) then
+            vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buf })
+          end
+        end
+        for _, field in ipairs({ "left_num_win", "right_num_win" }) do
+          local win = session[field]
+          if win and vim.api.nvim_win_is_valid(win) then
+            pcall(vim.api.nvim_win_close, win, true)
+          end
+        end
+      end
+
+      local session_layout_open = session_layout.open
+      session_layout.open = function(session)
+        session_layout_open(session)
+        remove_number_panes(session)
+        -- Hand the closed panes' columns to the content panes.
+        session:resize_layout()
+      end
+
+      local session_layout_resize = session_layout.resize
+      session_layout.resize = function(session)
+        if not is_two_way(session) then
+          return session_layout_resize(session)
+        end
+        -- Without the number panes the fixed-width budget holds only the
+        -- connector; zeroing the pane metrics makes the original math
+        -- split the rest between the content panes (their windows are
+        -- already closed, so no width is lost or double-counted).
+        local left_pane = session.left_number_pane_width
+        local right_pane = session.right_number_pane_width
+        session.left_number_pane_width = 0
+        session.right_number_pane_width = 0
+        session_layout_resize(session)
+        session.left_number_pane_width = left_pane
+        session.right_number_pane_width = right_pane
+      end
+
+      local session_dispose = Session.dispose
+      function Session:dispose()
+        session_dispose(self)
+        -- Wipe the number-pane buffers the layout no longer displays, so
+        -- they do not accumulate as hidden buffers after tab close.
+        if is_two_way(self) then
+          for _, field in ipairs({ "left_num_buf", "right_num_buf" }) do
+            local buf = self[field]
+            if buf and vim.api.nvim_buf_is_valid(buf) then
+              pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            end
+          end
+        end
+      end
+
       diffbandit.setup({
+        ui = {
+          -- No overview strips and no header row: just content, connector,
+          -- content.
+          overview = { enabled = false },
+          status = { enabled = false },
+        },
         git = {
           -- diffview keys: <C-Up>/<C-Down> moved between changed files.
           -- The plugin's ]c/[c hunk keys also cross file boundaries with a
