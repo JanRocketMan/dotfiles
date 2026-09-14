@@ -207,10 +207,15 @@ slaunch() {
             ;;
         python)
             if [[ "$nodes" -gt 1 ]]; then
-                srun_tail=(python -u -m torch.distributed.run \
-                    --nnodes="$nodes" --nproc_per_node=gpu \
-                    --rdzv-id=$RANDOM --rdzv-backend=c10d \
-                    "$@")
+                srun_tail=(/bin/bash -c
+                    'master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+                    master_port=${MASTER_PORT:-$((20000 + SLURM_JOB_ID % 20000))}
+                    exec python -u -m torch.distributed.run \
+                        --nnodes="$SLURM_NNODES" --nproc_per_node=gpu \
+                        --node_rank="$SLURM_NODEID" \
+                        --master_addr="$master_addr" --master_port="$master_port" \
+                        "$@"'
+                    bash "$@")
             elif [[ "$gpus" -gt 1 ]]; then
                 srun_tail=(python -u -m torch.distributed.run \
                     --nproc_per_node="$gpus" \

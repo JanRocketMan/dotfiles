@@ -20,22 +20,20 @@ return {{
         })
       end
     end
-    -- A simple config to debug via attach
-    -- Simply run `python -m debugpy --listen 5678 --wait-for-client`
-    -- To start it
+    -- Attach to the rank selected by NVIM_DEBUG_RANK. Rank N listens on
+    -- NVIM_DEBUG_BASE_PORT + N in the debugged program.
+    local debug_rank = tonumber(vim.env.NVIM_DEBUG_RANK or '0') or 0
+    local debug_base_port = tonumber(vim.env.NVIM_DEBUG_BASE_PORT or '8016') or 8016
     dap.configurations.python = {
       {
         type = 'python',
         request = 'attach',
-        name = 'Attach remote',
+        name = string.format('Attach rank %d', debug_rank),
         justMyCode = false,
-        connect = function()
-          return {
-            host = '127.0.0.1',
-            port = 8016,
-            justMyCode = false,
-          }
-        end,
+        connect = {
+          host = '127.0.0.1',
+          port = debug_base_port + debug_rank,
+        },
       },
     }
 
@@ -206,6 +204,15 @@ return {{
           require("dap").step_into({ askForTargets = true })
         end,
       })
+
+      -- Hover float (from I): close with <Esc>/<CR> too. q close comes from debugmaster's dap_float_close_on_q plugin
+      keys.get("I").action = function()
+        local ok, view = pcall(require('dap.ui.widgets').hover)
+        if not (ok and view and view.close) then return end
+        vim.keymap.set("n", "<Esc>", function() view.close() end, { buffer = view.buf, nowait = true })
+        -- Keep the original behavior: close when the cursor leaves the float
+        require('debugmaster.utils').register_to_close_on_leave(vim.api.nvim_get_current_win())
+      end
 
       vim.keymap.set({ "n", "v" }, "<leader>m", dm.mode.toggle, { nowait = true, desc = 'Enter debug [m]ode' })
     end
