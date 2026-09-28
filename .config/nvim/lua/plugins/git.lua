@@ -66,6 +66,22 @@ return {
 
       local state = require("diffbandit.state")
 
+      -- ; repeats the last ]c/[c change motion like f's ; repeats the last
+      -- char search (same direction). With no earlier ]c/[c it acts as ]c.
+      -- The Session wraps below record which motion ran last.
+      local last_chunk_motion
+      local function repeat_chunk_motion()
+        local session = state.sessions[vim.api.nvim_get_current_tabpage()]
+        if not session or session.disposed then
+          return
+        end
+        if last_chunk_motion == "prev" then
+          session:goto_prev_chunk()
+        else
+          session:goto_next_chunk()
+        end
+      end
+
       -- Two-way diff sessions only: the merge and folder hosts use other
       -- window fields, so this check keeps their per-pane scrolling intact.
       local function diff_session_for_buf(buf, tab)
@@ -252,6 +268,7 @@ return {
             remove_map_if_ours(buf, "<Tab>", toggle_file_panel)
             remove_map_if_ours(buf, "<PageDown>", scroll_down)
             remove_map_if_ours(buf, "<PageUp>", scroll_up)
+            remove_map_if_ours(buf, ";", repeat_chunk_motion)
           end
 
           -- PageDown/PageUp on either content pane scroll both panes; the
@@ -316,6 +333,45 @@ return {
       local session_goto_queue_file = Session.goto_queue_file
       function Session:goto_queue_file(index, chunk_position, opts)
         return session_goto_queue_file(self, wrap_queue_index(self, index), chunk_position, opts)
+      end
+
+      -- ]c/[c at a file boundary jump straight into the prev/next changed
+      -- file; the plugin wants a confirming second press first and only
+      -- warns. At the queue ends (nothing to jump to) the plugin behavior
+      -- stands.
+      local session_confirm_file_boundary = Session.confirm_file_boundary
+      function Session:confirm_file_boundary(direction)
+        local queue = self.file_queue
+        local target = (self.file_queue_index or 1) + (direction == "next" and 1 or -1)
+        if queue and (queue.entries or {})[target] then
+          self:goto_queue_file(target, "top")
+          return true
+        end
+        return session_confirm_file_boundary(self, direction)
+      end
+
+      -- Record which change motion ran last so ; can repeat it.
+      local session_goto_next_chunk = Session.goto_next_chunk
+      function Session:goto_next_chunk()
+        last_chunk_motion = "next"
+        return session_goto_next_chunk(self)
+      end
+      local session_goto_prev_chunk = Session.goto_prev_chunk
+      function Session:goto_prev_chunk()
+        last_chunk_motion = "prev"
+        return session_goto_prev_chunk(self)
+      end
+
+      -- ; goes on the content panes next to the plugin's ]c/[c maps.
+      local session_setup_keymaps = Session.setup_keymaps
+      function Session:setup_keymaps()
+        session_setup_keymaps(self)
+        for _, buf in ipairs({ self.left_buf, self.right_buf }) do
+          if buf and vim.api.nvim_buf_is_valid(buf) then
+            vim.keymap.set("n", ";", repeat_chunk_motion,
+              { buffer = buf, nowait = true, silent = true, desc = "Repeat last change motion" })
+          end
+        end
       end
 
       local Merge = require("diffbandit.merge")
@@ -480,6 +536,22 @@ return {
         if session and not session.disposed and type(session.resize_layout) == "function" then
           session:resize_layout()
         end
+      end
+
+      -- q in the file panel closes the whole viewer (the session tab goes
+      -- away, the TabClosed hook then quits neovim) instead of only hiding
+      -- the panel. Boot sessions ("-c DiffBanditGit") get the quit; <leader>g
+      -- keeps the plugin's hide-the-panel q so the editor stays open.
+      local panel_setup_keymaps = Panel.setup_keymaps
+      Panel.setup_keymaps = function(session)
+        panel_setup_keymaps(session)
+        local nav_buf = session.panel and session.panel.nav_buf
+        if not (opened_on_boot() and nav_buf and vim.api.nvim_buf_is_valid(nav_buf)) then
+          return
+        end
+        vim.keymap.set("n", "q", function()
+          session:close()
+        end, { buffer = nav_buf, nowait = true, silent = true, desc = "Close diff view" })
       end
 
       -- The plugin's resize math bails out in this layout (its window list

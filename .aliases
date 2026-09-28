@@ -87,7 +87,9 @@ alias l='ls -CF --color=auto'
 # jj (jujutsu) shortcuts
 alias gy='jj'
 alias jl='jj log'
-alias jd='jj diff'
+# Open the working-copy diff in nvim's diffbandit viewer; jj diff stays in the terminal
+alias jd='nvim -c DiffBanditGit'
+alias gi='nvim -c DiffBanditGit'
 alias js='jj status'
 
 # tmux (stty sane resets terminal after detach — passthrough/extended-keys

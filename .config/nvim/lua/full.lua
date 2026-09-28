@@ -27,6 +27,22 @@ vim.g.disable_autoformat = true
 -- 4. [[Add plugin keymaps]]
 
 -- Manipulate files with Vifm
+-- Browse directories with Vifm instead of netrw (e.g. `nvim .`, `:e dir`)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+vim.api.nvim_create_autocmd('BufEnter', {
+  group = vim.api.nvim_create_augroup('VifmBrowse', { clear = true }),
+  callback = function(args)
+    if vim.fn.isdirectory(args.file) == 0 then
+      return
+    end
+    local dir = args.file
+    -- Drop the empty directory buffer so quitting Vifm does not re-enter it
+    vim.cmd('silent! bwipeout! ' .. args.buf)
+    vim.cmd('Vifm ' .. vim.fn.fnameescape(dir))
+  end,
+})
+
 vim.keymap.set('n', '<leader>o', function()
   local file = vim.fn.expand('%:p')
   local dir  = vim.fn.fnamemodify(file, ':h')

@@ -98,7 +98,12 @@ vim.api.nvim_create_autocmd("VimEnter", {
     if vim.fn.argc() > 0 then
       return
     end
-    if vim.api.nvim_buf_get_offset(0, 0) <= 0 then
+    -- Only the empty startup buffer qualifies: any content (e.g. the
+    -- diffbandit panel opened by `nvim -c DiffBanditGit`) must not be
+    -- clobbered. The old offset(0, 0) <= 0 gate was always true (index 0
+    -- is the first line's offset, not the buffer size).
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    if #lines == 1 and lines[1] == "" then
       local handle = io.open(vim.api.nvim_buf_get_name(0))
       if handle == nil then
         recent_files_picker()
