@@ -59,6 +59,26 @@ Fish-like zsh setup with zinit plugin manager:
 
 First launch installs plugins automatically. Run `p10k configure` to set up prompt style.
 
+### `.local/bin/nvs` - Compact NVIDIA GPU monitor
+
+Requires only Bash and [`nvidia-smi`](https://docs.nvidia.com/deploy/nvidia-smi/)
+
+```bash
+nvs                                 # print once, GPU IDs 0-7 that exist
+nvs -n 0.1                          # refresh until Ctrl+C
+nvs -n 0.1 -i 0,1 -p 2060046         # selected GPUs with this PID
+nvs -p 2060046,2060047               # filter by multiple PIDs
+```
+
+Shows versions, a short GPU name, GPU statistics, and compute and graphics processes
+
+- Full GPU names must match across the selected GPUs, before the PID filter is applied
+- With `-p`, only matching processes and their GPUs remain. GPU statistics still show total device use
+- Memory is decimal GB (`MiB * 1048576 / 1000000000`), rounded to two decimal places
+- Process names use the basename, limited to 20 characters. `nvidia-smi` can also shorten these names
+
+Tests: `uv run --no-project python -m unittest discover -s tests`
+
 ### `.config/nvim/` — Neovim
 
 [frozen.nvim](https://github.com/JanRocketMan/frozen.nvim) config (git submodule). Uses lazy.nvim — plugins install automatically on first launch.

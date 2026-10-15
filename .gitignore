@@ -83,6 +83,7 @@ __pycache__/
 # scripts via an explicit allowlist below.
 .local/bin/*
 !.local/bin/claude-context
+!.local/bin/nvs
 
 # zsh extracted from the system .deb (modules + functions)
 .local/lib/zsh/

@@ -8,6 +8,7 @@ README\.md
 ^/TOOLS\.md
 ^/CLAUDE\.md
 ^guides
+^/tests
 # Deploy only the hand-authored parts of .claude; ignore all runtime state
 # (plugins, projects, sessions, snapshots, history, etc.)
 ^/\.claude/(?!(?:hooks|skills)(?=/|$)|CLAUDE\.md$|keybindings\.json$|settings\.json$|statusline-command\.sh$)[^/]+

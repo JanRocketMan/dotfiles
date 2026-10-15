@@ -46,7 +46,8 @@ nbox_agent() {
         esac
     done
 
-    [[ -n "$TMUX" ]] && tmux rename-window "$tag@${PWD##*/}"
+    # $TMUX leaks into Slurm jobs, where its server is unreachable
+    [[ -n "$TMUX" ]] && tmux rename-window "$tag@${PWD##*/}" 2>/dev/null
     if [[ -n "${SLURM_JOB_ID:-}" ]] || unshare --user true 2>/dev/null; then
         "$HOME/nanobox/nbox" run "${nbox_args[@]}" "${agent_cmd[@]}" "${agent_args[@]}"
     else
@@ -54,7 +55,7 @@ nbox_agent() {
             bash -c '"$HOME"/nanobox/nbox run "$@"' _ \
             "${nbox_args[@]}" "${agent_cmd[@]}" "${agent_args[@]}"
     fi
-    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on
+    [[ -n "$TMUX" ]] && tmux set-window-option automatic-rename on 2>/dev/null
 }
 
 # Agents: sandboxed via nanobox by default, explicit opt-out
@@ -119,6 +120,9 @@ alias dpython='PYDEVD_DISABLE_FILE_VALIDATION=1 python -m debugpy --wait-for-cli
 alias rpython='python -u -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=gpu'
 alias upi='uv pip install'
 alias upu='uv pip uninstall'
+
+# Memory-focused htop with a separate layout
+alias ram='HTOPRC="${XDG_CONFIG_HOME:-$HOME/.config}/htop/ramrc" htop --sort-key=PERCENT_MEM'
 
 # pcpctl
 alias pcp='pcpctl'

@@ -1,0 +1,12 @@
+# PID USER VIRT SHR CPU% MEM% TIME+ Command (htop's legacy field IDs)
+fields=0 48 38 40 46 47 49 1
+hide_kernel_threads=1
+hide_userland_threads=1
+tree_view=0
+left_meters=Memory Swap
+left_meter_modes=1 1
+right_meters=
+right_meter_modes=
+header_layout=one_100
+column_meters_0=Memory Swap
+column_meter_modes_0=1 1

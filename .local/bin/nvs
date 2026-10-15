@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export LC_ALL=C
+
+usage() {
+    printf '%s\n' \
+        'Usage: nvs [-n SECONDS] [-i GPU_IDS] [-p PIDS]' \
+        '  -n  Refresh interval; omit to print once' \
+        '  -i  Comma-separated GPU IDs (default: 0,1,2,3,4,5,6,7)' \
+        '  -p  Comma-separated PIDs; show only these processes and their GPUs' \
+        '  -h  Show help'
+}
+
+die() { printf 'nvs: %s\n' "$*" >&2; exit 1; }
+
+interval='' gpus=0,1,2,3,4,5,6,7 pids='' explicit_gpus=0
+[[ ${1:-} != --help ]] || { usage; exit 0; }
+while getopts ':n:i:p:h' option; do
+    case $option in
+        n) interval=$OPTARG; [[ -n $interval ]] || die 'refresh interval must be a positive number' ;;
+        i) gpus=$OPTARG; explicit_gpus=1 ;;
+        p) pids=$OPTARG ;;
+        h) usage; exit 0 ;;
+        :) die "-$OPTARG requires a value" ;;
+        *) die "unknown option: -$OPTARG (use -h for help)" ;;
+    esac
+done
+shift "$((OPTIND - 1))"
+(( $# == 0 )) || die 'unexpected arguments (use -h for help)'
+[[ $gpus =~ ^(0|[1-9][0-9]*)(,(0|[1-9][0-9]*))*$ ]] || die 'GPU IDs must be comma-separated non-negative integers'
+[[ -z $pids || $pids =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]] || die 'PIDs must be comma-separated positive integers'
+if [[ -n $interval ]]; then
+    [[ $interval =~ ^[0-9]*\.?[0-9]+$ && $interval == *[1-9]* ]] || die 'refresh interval must be a positive number'
+fi
+command -v nvidia-smi >/dev/null || die 'nvidia-smi not found'
+
+# Convert MiB to decimal GB with integer arithmetic, rounded to two decimal places.
+to_gb() {
+    REPLY=N/A
+    if [[ $1 =~ ^[0-9]+$ ]]; then
+        local cents=$(( (10#$1 * 1048576 + 5000000) / 10000000 ))
+        printf -v REPLY '%d.%02d' "$((cents / 100))" "$((cents % 100))"
+    fi
+}
+
+snapshot() {
+    local data summary line id name temp draw cap used total util field pid memory row
+    local smi='' driver='' cuda='' model='' short='' count=0 seen=, active=, gpu_rows='' process_rows=''
+    data=$(nvidia-smi --query-gpu=index,name,temperature.gpu,power.draw,power.limit,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits) \
+        || die "GPU query failed${data:+: $data}"
+    summary=$(nvidia-smi) || die "process query failed${summary:+: $summary}"
+
+    # The native process table includes graphics processes, unlike --query-compute-apps.
+    # Accept both layouts, with and without MIG instance columns. Names can be truncated by nvidia-smi.
+    local process_re='^[[:space:]]*([0-9]+)[[:space:]]+(([0-9]+|N/A)[[:space:]]+([0-9]+|N/A)[[:space:]]+)?([0-9]+)[[:space:]]+[CGM+]+[[:space:]]+(.+)[[:space:]]+([0-9]+MiB|N/A|\[N/A\])[[:space:]]*$'
+    while IFS= read -r line; do
+        if [[ $line =~ NVIDIA-SMI[[:space:]]+([^[:space:]]+) ]]; then smi=${BASH_REMATCH[1]}; fi
+        if [[ $line =~ (Driver|KMD)[[:space:]]Version:[[:space:]]+([^[:space:]]+) ]]; then driver=${BASH_REMATCH[2]}; fi
+        if [[ $line =~ CUDA[[:space:]](UMD[[:space:]])?Version:[[:space:]]+([^[:space:]]+) ]]; then cuda=${BASH_REMATCH[2]}; fi
+        line=${line#*|}
+        line=${line%|*}
+        [[ $line =~ $process_re ]] || continue
+        id=${BASH_REMATCH[1]} pid=${BASH_REMATCH[5]} name=${BASH_REMATCH[6]} memory=${BASH_REMATCH[7]}
+        [[ ,$gpus, == *,"$id",* ]] || continue
+        [[ -z $pids || ,$pids, == *,"$pid",* ]] || continue
+        active+="$id,"
+        read -r name <<< "$name"
+        to_gb "${memory%MiB}"
+        [[ $REPLY == N/A ]] || REPLY+=' GB'
+        printf -v row '%3s %7s %-20.20s %8s\n' "$id" "$pid" "${name##*/}" "$REPLY"
+        process_rows+=$row
+    done <<< "$summary"
+    [[ -n $smi && -n $driver && -n $cuda ]] || die 'cannot read NVIDIA-SMI, driver, or CUDA version'
+
+    while IFS=, read -r id name temp draw cap used total util; do
+        [[ ,$gpus, == *,"$id",* ]] || continue
+        seen+="$id,"
+        if [[ -z $model ]]; then
+            model=$name
+        elif [[ $name != "$model" ]]; then
+            die "GPU $id is '$name'; expected '$model'"
+        fi
+        [[ -z $pids || $active == *,"$id",* ]] || continue
+        count=$((count + 1))
+        for field in draw cap; do
+            if [[ ${!field} =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+                printf -v "$field" '%.0f' "${!field}"
+            else
+                printf -v "$field" '%s' N/A
+            fi
+        done
+        [[ $temp =~ ^[0-9]+$ ]] || temp=N/A
+        if [[ $util =~ ^[0-9]+$ ]]; then util+='%'; else util=N/A; fi
+        to_gb "$used"; used=$REPLY
+        to_gb "$total"; total=$REPLY
+        printf -v row '%3s %3s %7s %13s %4s\n' "$id" "$temp" "$draw/$cap" "$used/$total" "$util"
+        gpu_rows+=$row
+    done <<< "${data//, /,}"
+
+    if (( explicit_gpus )); then
+        local -a requested
+        IFS=, read -r -a requested <<< "$gpus"
+        for id in "${requested[@]}"; do
+            [[ $seen == *,"$id",* ]] || die "GPU $id not found"
+        done
+    fi
+    [[ $seen != , ]] || die 'no selected GPUs found'
+    short=${model#NVIDIA }
+    short=${short#Tesla }
+    if [[ $short =~ ^([A-Z][0-9]+).*SXM ]]; then
+        short="${BASH_REMATCH[1]}-SXM"
+    elif [[ $short =~ ^([A-Z][0-9]+).*PCI[Ee] ]]; then
+        short="${BASH_REMATCH[1]}-PCIe"
+    fi
+    printf '%dx(%s)  SMI %s  Driver %s  CUDA %s\n\n' "$count" "$short" "$smi" "$driver" "$cuda"
+    printf '%3s %3s %7s %13s %4s\n' GPU C W/cap 'Memory(GB)' Util
+    printf '%s' "${gpu_rows:-No matching GPUs$'\n'}"
+    printf '\n%3s %7s %-20s %8s\n' GPU PID Name Memory
+    printf '%s' "${process_rows:-No matching processes$'\n'}"
+}
+
+frame=$(snapshot)
+if [[ -z $interval ]]; then
+    printf '%s\n' "$frame"
+    exit 0
+fi
+
+# Keep a pipe open at both ends so Bash's timed read can wait without external sleep.
+exec 3<> <(:)
+terminal=0
+if [[ -t 1 && ${TERM:-dumb} != dumb ]]; then
+    terminal=1
+    printf '\033[?1049h\033[?25l'
+    trap 'printf "\033[?25h\033[?1049l"' EXIT
+fi
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+while :; do
+    if (( terminal )); then
+        printf '\033[H%s\033[K\n\033[J' "${frame//$'\n'/$'\033[K\n'}"
+    else
+        printf '%s\n' "$frame"
+    fi
+    read -r -t "$interval" -u 3 _ || :
+    frame=$(snapshot)
+done
