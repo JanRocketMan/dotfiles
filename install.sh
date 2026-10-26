@@ -222,7 +222,8 @@ if command -v uv &>/dev/null; then
 else
     url="$(manifest_get uv url)"
     echo "[..] Installing uv..."
-    curl -LsSf "$url" | sh
+    # .zshenv already puts ~/.local/bin on PATH; stop the installer from editing the stowed .zshrc
+    curl -LsSf "$url" | UV_NO_MODIFY_PATH=1 sh
     echo "[ok] uv installed"
 fi
 
